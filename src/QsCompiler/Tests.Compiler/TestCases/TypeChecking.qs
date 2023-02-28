@@ -1,11 +1,241 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 /// This namespace contains test cases for type checking
 namespace Microsoft.Quantum.Testing.TypeChecking {
-
     open Microsoft.Quantum.Testing.General;
 
+    // Integral operators
+
+    function Integral1() : Unit {
+        let _ = 1 &&& 2;
+        let _ = 1 ||| 2;
+        let _ = 1 ^^^ 2;
+        let _ = 1 % 2;
+    }
+
+    function Integral2() : Unit {
+        let _ = 1L &&& 2L;
+        let _ = 1L ||| 2L;
+        let _ = 1L ^^^ 2L;
+        let _ = 1L % 2L;
+    }
+
+    function IntegralInvalid1() : Unit {
+        let _ = "1" &&& "2";
+        let _ = "1" ||| "2";
+        let _ = "1" ^^^ "2";
+        let _ = "1" % "2";
+    }
+
+    function IntegralInvalid2() : Unit {
+        let _ = 1 &&& 2L;
+        let _ = 1 ||| 2L;
+        let _ = 1 ^^^ 2L;
+        let _ = 1 % 2L;
+    }
+
+    // Iterable types
+
+    function Iterable1() : Unit {
+        let xs = [1, 2, 3];
+        for x in xs {}
+    }
+
+    function Iterable2() : Unit {
+        for i in 0 .. 10 {}
+    }
+
+    function IterableInvalid1() : Unit {
+        for c in "foo" {}
+    }
+
+    function IterableInvalid2() : Unit {
+        for d in 123 {}
+    }
+
+    // Numeric operators
+
+    function Numeric1() : Unit {
+        let _ = -1;
+        let _ = 1 - 2;
+        let _ = 1 * 2;
+        let _ = 1 / 2;
+    }
+
+    function Numeric2() : Unit {
+        let _ = -1.0;
+        let _ = 1.0 - 2.0;
+        let _ = 1.0 * 2.0;
+        let _ = 1.0 / 2.0;
+    }
+
+    function Numeric3() : Unit {
+        let _ = -1L;
+        let _ = 1L - 2L;
+        let _ = 1L * 2L;
+        let _ = 1L / 2L;
+    }
+
+    function NumericInvalid1() : Unit {
+        let _ = -One;
+        let _ = Zero - One;
+        let _ = Zero * One;
+        let _ = Zero / One;
+    }
+
+    function NumericInvalid2() : Unit {
+        let _ = -"1";
+        let _ = "1" - "2";
+        let _ = "1" * "2";
+        let _ = "1" / "2";
+    }
+
+    // Power operator
+
+    function DelayedIntAsBigInt(x : Int, u : Unit) : BigInt {
+        return 1L;
+    }
+
+    function Power1() : BigInt {
+        let a = DelayedIntAsBigInt(1, ());
+        return a ^ 3;
+    }
+
+    function Power2() : BigInt {
+        let b = Default<BigInt>();
+        return b ^ 2;
+    }
+
+    function Power3() : BigInt {
+        let getOne = DelayedIntAsBigInt(1, _);
+        let c = getOne();
+        return c ^ 3;
+    }
+
+    function Power4() : BigInt {
+        let getOneGen = DelayedId(1L, _);
+        let d = getOneGen();
+        return d ^ 2;
+    }
+
+    function Power5() : BigInt {
+        let e = (DelayedId(_, ())(1L));
+        return e ^ 2;
+    }
+
+    function PowerInvalid1() : BigInt {
+        let a = DelayedIntAsBigInt(1, ());
+        return a ^ 3L;
+    }
+
+    function PowerInvalid2() : BigInt {
+        let b = Default<BigInt>();
+        return b ^ 2L;
+    }
+
+    function PowerInvalid3() : BigInt {
+        let getOne = DelayedIntAsBigInt(1, _);
+        let c = getOne();
+        return c ^ 3L;
+    }
+
+    function PowerInvalid4() : BigInt {
+        let getOneGen = DelayedId(1L, _);
+        let d = getOneGen();
+        return d ^ 2L;
+    }
+
+    function PowerInvalid5() : BigInt {
+        let e = (DelayedId(_, ())(1L));
+        return e ^ 2L;
+    }
+
+    // Semigroup operator
+
+    function Semigroup1() : Unit {
+        let _ = 1 + 2;
+    }
+
+    function Semigroup2() : Unit {
+        let _ = 1.0 + 2.0;
+    }
+
+    function Semigroup3() : Unit {
+        let _ = 1L + 2L;
+    }
+
+    function Semigroup4() : Unit {
+        let _ = "foo" + "bar";
+    }
+
+    function Semigroup5() : Unit {
+        let _ = [()] + [()];
+    }
+
+    function SemigroupInvalid1() : Unit {
+        let _ = Zero + One;
+    }
+
+    function SemigroupInvalid2() : Unit {
+        let _ = () + ();
+    }
+
+    // Unwrap operator
+
+    function Unwrap1(x : BigEndian) : Unit {
+        let _ = x!;
+    }
+
+    function UnwrapInvalid1(x : Int) : Unit {
+        let _ = x!;
+    }
+
+    function UnwrapInvalid2(x : Int[]) : Unit {
+        let _ = x!;
+    }
+
+    // Indexed types
+
+    function Indexed1(xs : Int[], i : Int) : Int {
+        return xs[i];
+    }
+
+    function Indexed2<'a>(xs : 'a[], i : Int) : 'a {
+        return xs[i];
+    }
+
+    function Indexed3(xs : Int[], r : Range) : Int[] {
+        return xs[r];
+    }
+
+    function Indexed4<'a>(xs : 'a[], r : Range) : 'a[] {
+        return xs[r];
+    }
+
+    function IndexedInvalid1(xs : Int, i : Int) : Int {
+        return xs[i];
+    }
+
+    function IndexedInvalid2<'a>(xs : 'a, i : Int) : 'a {
+        return xs[i];
+    }
+
+    function IndexedInvalid3<'a>(xs : Int[], i : 'a) : Int {
+        return xs[i];
+    }
+
+    function IndexedInvalid4<'a>(xs : Int[], i : 'a) : Int[] {
+        return xs[i];
+    }
+
+    function IndexedInvalid5(i : Int) : Int {
+        return undefinedVariable[i];
+    }
+
+    function IndexedInvalid6(xs : Int[]) : Int {
+        return xs[undefinedVariable];
+    }
 
     // utils for testing variance behavior 
 
@@ -210,45 +440,116 @@ namespace Microsoft.Quantum.Testing.TypeChecking {
         return res;
     }
 
-    function CommonBaseType10 () : BigInt {
-        return 1 + 1; 
+    function CommonBaseType10 (
+        op1 : (Unit => Unit is Adj + Ctl),
+        op2 : (Unit => Unit is Ctl + Adj)) 
+    : (Unit => Unit is Ctl + Adj)[] {
+        mutable arr = [op1];
+        set arr += [op2];
+        return arr;
     }
 
     function CommonBaseType11 () : BigInt {
+        return 1 + 1; 
+    }
+
+    function CommonBaseType12 () : BigInt {
         return 1L + 1; 
     }
 
-    function CommonBaseType12 (arg1 : OpTuple, arg2 : OpTuple) : OpTuple[] {
+    function CommonBaseType13 (arg1 : OpTuple, arg2 : OpTuple) : OpTuple[] {
         return [arg1, arg2]; 
     }
 
-    function CommonBaseType13 (arg1 : OpTuple, arg2 : AdjCtlTuple) : ((Unit => Unit), (Unit => Unit))[] {
-        return [arg1!, arg2!]; 
-    }
-
-    function CommonBaseType14 (arg1 : OpTuple, arg2 : AdjCtlTuple) : OpTuple[] {
+    function CommonBaseType14 (arg1 : OpTuple, arg2 : AdjCtlTuple) : ((Unit => Unit), (Unit => Unit))[] {
         return [arg1!, arg2!]; 
     }
 
     function CommonBaseType15 (arg1 : OpTuple, arg2 : AdjCtlTuple) : OpTuple[] {
+        return [arg1!, arg2!]; 
+    }
+
+    function CommonBaseType16 (arg1 : OpTuple, arg2 : AdjCtlTuple) : OpTuple[] {
         return [arg1, arg2]; 
     }
 
-    function CommonBaseType16 () : (Unit => Unit is Adj)[] {
+    function CommonBaseType17 () : (Unit => Unit is Adj)[] {
         return [SelfAdjOp, IntrinsicAdj];
     }
 
-    function CommonBaseType17<'A> (a1 : 'A, a2 : 'A) : 'A[] {
+    function CommonBaseType18<'A> (a1 : 'A, a2 : 'A) : 'A[] {
         return [a1, a2];
     }
 
-    function CommonBaseType18<'A,'B> () : 'A[] {
+    function CommonBaseType19<'A,'B> () : 'A[] {
         return [(new 'A[1])[0], (new 'A[1])[0]];
     }
 
-    function CommonBaseType19<'A,'B> (a : 'A, b : 'B) : 'A[] {
+    function CommonBaseType20<'A,'B> (a : 'A, b : 'B) : 'A[] {
         return [(new 'A[1])[0], (new 'B[1])[0]];
     }
+
+    function CommonBaseType21 () : BigEndian[] {
+        return [(new BigEndian[1])[0], (new BigEndian[1])[0]];
+    }
+
+    function CommonBaseType22 () : (Int -> Unit)[] {
+        return [GenericFunction<Int>, GenericFunction<Int>];
+    }
+
+    function CommonBaseType23 () : (Int -> Unit)[] {
+        let fct = GenericFunction<Int>;
+        return [GenericFunction<Int>, fct];
+    }
+
+    function CommonBaseType24 () : (Int -> Unit)[] {
+        let fct = GenericFunction<Int>;
+        return [fct, fct];
+    }
+
+    function CommonBaseType25 () : (Int -> Unit)[] {
+        return [GenericFunction<Int>, GenericFunction<Double>];
+    }
+
+
+    // Equality comparison
+
+    function UnitEquality(x : Unit, y : Unit) : Bool { return x == y; }
+    function UnitInequality(x : Unit, y : Unit) : Bool { return x != y; }
+    function IntEquality(x : Int, y : Int) : Bool { return x == y; }
+    function IntInequality(x : Int, y : Int) : Bool { return x != y; }
+    function BigIntEquality(x : BigInt, y : BigInt) : Bool { return x == y; }
+    function BigIntInequality(x : BigInt, y : BigInt) : Bool { return x != y; }
+    function DoubleEquality(x : Double, y : Double) : Bool { return x == y; }
+    function DoubleInequality(x : Double, y : Double) : Bool { return x != y; }
+    function BoolEquality(x : Bool, y : Bool) : Bool { return x == y; }
+    function BoolInequality(x : Bool, y : Bool) : Bool { return true != true; }
+    function StringEquality(x : String, y : String) : Bool { return x == y; }
+    function StringInequality(x : String, y : String) : Bool { return x != y; }
+    function QubitEquality(x : Qubit, y : Qubit) : Bool { return x == y; }
+    function QubitInequality(x : Qubit, y : Qubit) : Bool { return x != y; }
+    function ResultEquality(x : Result, y : Result) : Bool { return x == y; }
+    function ResultInequality(x : Result, y : Result) : Bool { return x != y; }
+    function PauliEquality(x : Pauli, y : Pauli) : Bool { return x == y; }
+    function PauliInequality(x : Pauli, y : Pauli) : Bool { return x != y; }
+    function RangeEquality(x : Range, y : Range) : Bool { return x == y; }
+    function RangeInequality(x : Range, y : Range) : Bool { return x != y; }
+    function ArrayEquality(x : Int[], y : Int[]) : Bool { return x == y; }
+    function ArrayInequality(x : Int[], y : Int[]) : Bool { return x != y; }
+    function TupleEquality(x : (Int, Int), y : (Int, Int)) : Bool { return x == y; }
+    function TupleInequality(x : (Int, Int), y : (Int, Int)) : Bool { return x != y; }
+    function UDTEquality(x : NamedItems1, y : NamedItems1) : Bool { return x == y; }
+    function UDTInequality(x : NamedItems1, y : NamedItems1) : Bool { return x != y; }
+    function GenericEquality<'A>(x : 'A, y : 'A) : Bool { return x == y; }
+    function GenericInequality<'A>(x : 'A, y : 'A) : Bool { return x != y; }
+    function OperationEquality(x : (Unit => Unit), y : (Unit => Unit)) : Bool { return x == y; }
+    function OperationInequality(x : (Unit => Unit), y : (Unit => Unit)) : Bool { return x != y; }
+    function FunctionEquality(x : (Unit -> Unit), y : (Unit -> Unit)) : Bool { return x == y; }
+    function FunctionInequality(x : (Unit -> Unit), y : (Unit -> Unit)) : Bool { return x != y; }
+    function InvalidTypeEquality(x : __Invalid__, y : __Invalid__) : Bool { return x == y; }
+    function InvalidTypeInequality(x : __Invalid__, y : __Invalid__) : Bool { return x != y; }
+    function NoCommonBaseEquality(x : Int, y : String) : Bool { return x == y; }
+    function NoCommonBaseInequality(x : Int, y : String) : Bool { return x != y; }
 
 
     // utils for testing type matching of arguments
@@ -508,5 +809,475 @@ namespace Microsoft.Quantum.Testing.TypeChecking {
         let fct = PartialApplication29();
         fct(1);
     }
-}
 
+    // Sized array constructors
+
+    function SizedArray1(n : Int) : Int[] {
+        return [10, size = n];
+    }
+
+    function SizedArray2() : String[] {
+        return ["foo", size = 0];
+    }
+
+    function SizedArray3() : String[] {
+        return ["foo", size = -1];
+    }
+
+    function SizedArray4<'a>(value : 'a) : 'a[] {
+        return [value, size = 5];
+    }
+
+    function SizedArrayInvalid1(n : Double) : Int[] {
+        return [10, size = n];
+    }
+
+    function SizedArrayInvalid2(n : String) : Int[] {
+        return [10, size = n];
+    }
+
+    function SizedArrayInvalid3() : Int[] {
+        return [5, size = (1, 2)];
+    }
+
+    // Lambdas
+
+    function Lambda1<'a>() : 'a -> 'a {
+        return x -> x;
+    }
+
+    function Lambda2(x : Int) : Int -> Int {
+        return y -> x + y;
+    }
+
+    function Lambda3<'a>() : 'a => 'a {
+        return x => x;
+    }
+
+    function Lambda4(x : Int) : Int => Int {
+        return y => x + y;
+    }
+
+    function Lambda5() : Qubit => Unit {
+        return q => Operation(q);
+    }
+
+    function Lambda6() : Qubit => Unit is Adj {
+        return q => Adjointable(q);
+    }
+
+    function Lambda7() : Qubit => Unit is Adj + Ctl {
+        return q => Unitary(q);
+    }
+
+    function Lambda8(xs : Int[]) : String[] {
+        return Mapped(x -> $"{x}", xs);
+    }
+
+    function Lambda9() : Int[] {
+        return Mapped(_ -> 0, ["a", "b", "c"]);
+    }
+
+    function Lambda10() : Int {
+        let id = x -> x;
+        return id(0);
+    }
+
+    function Lambda11() : (Int, Int) {
+        let id = x -> x;
+        return id(0, 1);
+    }
+
+    function Lambda12() : Int {
+        let fst = (x, _) -> x;
+        return fst(0, 1);
+    }
+
+    function Lambda13() : Int {
+        let call = (f, x) -> f(x);
+        let add1 = x -> x + 1;
+        return call(add1, 0);
+    }
+
+    function Lambda14() : Unit -> Int {
+        return () -> 0;
+    }
+
+    function Lambda15<'a>() : 'a -> String {
+        return x -> "foo";
+    }
+
+    function Lambda16<'a>() : 'a -> 'a[] {
+        return x -> [];
+    }
+
+    function Lambda17() : Unit {
+        let op = () => 1;
+    }
+
+    function Lambda18() : Unit {
+        let op = () => (GenericUnitary(), 2);
+    }
+
+    function Lambda19() : Unit {
+        let op = x => x + 1;
+    }
+
+    function Lambda20() : Unit {
+        let op = q => GenericFunction(Unitary(q), Adjointable(q));
+    }
+
+    function Lambda21() : Unit {
+        let op = q => GenericFunction(Unitary(q), Controllable(q));
+    }
+
+    function Lambda22() : Unit {
+        let op = q => GenericFunction(Adjointable(q), Controllable(q));
+    }
+
+    function Lambda23() : Int {
+        let numbers = [14, 15, 3, -4, 18];
+        return Fold((x, y) -> x + y, 0, numbers);
+    }
+
+    function Lambda24(xs : Int[]) : Int[] {
+        return Mapped(i -> xs[i], xs);
+    }
+
+    function Lambda25(xs : Int[]) : Int[] {
+        return Mapped(i -> xs[i + 1], xs);
+    }
+
+    function Lambda26(xs : Int[]) : Int[] {
+        let f = i -> xs w/ i <- 0;
+        return f(1);
+    }
+
+    function Lambda27(xs : Int[]) : Int[] {
+        let f = i -> xs w/ i + 1 <- 0;
+        return f(1);
+    }
+
+    function Lambda28() : Int[] {
+        let f = (n, i) -> [0, size = n] w/ i <- 1;
+        return f(2, 0);
+    }
+
+    function Lambda29() : NamedItems1 {
+        let f = x -> x w/ Im <- 1;
+        return f(NamedItems1(1, 0));
+    }
+
+    function Lambda30() : Int[] {
+        let i = 0;
+        let f = xs -> xs w/ i <- 1;
+        return f([1, 0]);
+    }
+
+    function Lambda31(xs : NamedItems1[]) : Int[] {
+        return Mapped(x -> x::Re, xs);
+    }
+
+    function LambdaRange() : (Int, Int) -> Range {
+        return (x, y) -> x..y;
+    }
+
+    function LambdaInvalidRange() : (Qubit, Int) -> Range {
+        return (x, y) -> x..y;
+    }
+
+    function LambdaRangeStep() : (Int, Int, Int) -> Range {
+        return (x, y, z) -> x..y..z;
+    }
+
+    function LambdaInvalidRangeStep() : (Qubit, Int, Int) -> Range {
+        return (x, y, z) -> x..y..z;
+    }
+
+    function LambdaCond<'T>() : (Bool, 'T, 'T) -> 'T {
+        return (x, y, z) -> x ? y | z;
+    }
+
+    function LambdaInvalidCond<'T>() : (Qubit, 'T, 'T) -> 'T {
+        return (x, y, z) -> x ? y | z;
+    }
+
+    function LambdaOr() : (Bool, Bool) -> Bool {
+        return (x, y) -> x or y;
+    }
+
+    function LambdaInvalidOr() : (Qubit, Qubit) -> Bool {
+        return (x, y) -> x or y;
+    }
+
+    function LambdaAnd() : (Bool, Bool) -> Bool {
+        return (x, y) -> x and y;
+    }
+
+    function LambdaInvalidAnd() : (Qubit, Qubit) -> Bool {
+        return (x, y) -> x and y;
+    }
+
+    function LambdaBOr() : (Int, Int) -> Int {
+        return (x, y) -> x ||| y;
+    }
+
+    function LambdaInvalidBOr() : (Qubit, Qubit) -> Qubit {
+        return (x, y) -> x ||| y;
+    }
+
+    function LambdaBXor() : (Int, Int) -> Int {
+        return (x, y) -> x ^^^ y;
+    }
+
+    function LambdaInvalidBXor() : (Qubit, Qubit) -> Qubit {
+        return (x, y) -> x ^^^ y;
+    }
+
+    function LambdaBAnd() : (Int, Int) -> Int {
+        return (x, y) -> x &&& y;
+    }
+
+    function LambdaInvalidBAnd() : (Qubit, Qubit) -> Qubit {
+        return (x, y) -> x &&& y;
+    }
+
+    function LambdaEq() : (Int, Int) -> Bool {
+        return (x, y) -> x == y;
+    }
+
+    function LambdaInvalidEq() : (Unit -> Unit, Unit -> Unit) -> Bool {
+        return (x, y) -> x == y;
+    }
+
+    function LambdaNe() : (Int, Int) -> Bool {
+        return (x, y) -> x != y;
+    }
+
+    function LambdaInvalidNe() : (Unit -> Unit, Unit -> Unit) -> Bool {
+        return (x, y) -> x != y;
+    }
+
+    function LambdaLte() : (Int, Int) -> Bool {
+        return (x, y) -> x <= y;
+    }
+
+    function LambdaInvalidLte() : (Qubit, Qubit) -> Bool {
+        return (x, y) -> x <= y;
+    }
+
+    function LambdaLt() : (Int, Int) -> Bool {
+        return (x, y) -> x < y;
+    }
+
+    function LambdaInvalidLt() : (Qubit, Qubit) -> Bool {
+        return (x, y) -> x < y;
+    }
+
+    function LambdaGte() : (Int, Int) -> Bool {
+        return (x, y) -> x >= y;
+    }
+
+    function LambdaInvalidGte() : (Qubit, Qubit) -> Bool {
+        return (x, y) -> x >= y;
+    }
+
+    function LambdaGt() : (Int, Int) -> Bool {
+        return (x, y) -> x > y;
+    }
+
+    function LambdaInvalidGt() : (Qubit, Qubit) -> Bool {
+        return (x, y) -> x > y;
+    }
+
+    function LambdaShr() : (Int, Int) -> Int {
+        return (x, y) -> x >>> y;
+    }
+
+    function LambdaInvalidShr() : (Qubit, Qubit) -> Qubit {
+        return (x, y) -> x >>> y;
+    }
+
+    function LambdaShl() : (Int, Int) -> Int {
+        return (x, y) -> x <<< y;
+    }
+
+    function LambdaInvalidShl() : (Qubit, Qubit) -> Qubit {
+        return (x, y) -> x >>> y;
+    }
+
+    function LambdaAdd() : (Int, Int) -> Int {
+        return (x, y) -> x + y;
+    }
+
+    function LambdaConcat() : (String, String) -> String {
+        return (x, y) -> x + y;
+    }
+
+    function LambdaInvalidPlus() : (Qubit, Qubit) -> Qubit {
+        return (x, y) -> x + y;
+    }
+
+    function LambdaSub() : (Int, Int) -> Int {
+        return (x, y) -> x - y;
+    }
+
+    function LambdaInvalidSub() : (Qubit, Qubit) -> Qubit {
+        return (x, y) -> x - y;
+    }
+
+    function LambdaMul() : (Int, Int) -> Int {
+        return (x, y) -> x * y;
+    }
+
+    function LambdaInvalidMul() : (Qubit, Qubit) -> Qubit {
+        return (x, y) -> x * y;
+    }
+
+    function LambdaDiv() : (Int, Int) -> Int {
+        return (x, y) -> x / y;
+    }
+
+    function LambdaInvalidDiv() : (Qubit, Qubit) -> Qubit {
+        return (x, y) -> x / y;
+    }
+
+    function LambdaMod() : (Int, Int) -> Int {
+        return (x, y) -> x % y;
+    }
+
+    function LambdaInvalidMod() : (Qubit, Qubit) -> Qubit {
+        return (x, y) -> x % y;
+    }
+
+    function LambdaExp() : (Int, Int) -> Int {
+        return (x, y) -> x ^ y;
+    }
+
+    function LambdaInvalidExp() : (Qubit, Qubit) -> Qubit {
+        return (x, y) -> x ^ y;
+    }
+
+    function LambdaBNot() : Int -> Int {
+        return x -> ~~~x;
+    }
+
+    function LambdaInvalidBNot() : Qubit -> Qubit {
+        return x -> ~~~x;
+    }
+
+    function LambdaNot() : Bool -> Bool {
+        return x -> not x;
+    }
+
+    function LambdaInvalidNot() : Qubit -> Bool {
+        return x -> not x;
+    }
+
+    function LambdaNeg() : Int -> Int {
+        return x -> -x;
+    }
+
+    function LambdaInvalidNeg() : Qubit -> Qubit {
+        return x -> -x;
+    }
+
+    function LambdaFnCallFn() : (Unit -> Unit) -> Unit {
+        return f -> f();
+    }
+
+    function LambdaFnCallOp() : (Unit => Unit) -> Unit {
+        return f -> f();
+    }
+
+    function LambdaFnInvalidCall() : Qubit -> Unit {
+        return f -> f();
+    }
+
+    function LambdaOpCallFn() : (Unit -> Unit) => Unit {
+        return f => f();
+    }
+
+    function LambdaOpCallOp() : (Unit => Unit) => Unit {
+        return f => f();
+    }
+
+    function LambdaOpInvalidCall() : Qubit => Unit {
+        return f => f();
+    }
+
+    function LambdaFnAdjoint() : (Unit => Unit is Adj) -> (Unit => Unit is Adj) {
+        return f -> Adjoint f;
+    }
+
+    function LambdaOpAdjoint() : (Unit => Unit is Adj) => (Unit => Unit is Adj) {
+        return f => Adjoint f;
+    }
+
+    function LambdaFnControlled() : (Unit => Unit is Ctl) -> ((Qubit[], Unit) => Unit is Ctl) {
+        return f -> Controlled f;
+    }
+
+    function LambdaOpControlled() : (Unit => Unit is Ctl) => ((Qubit[], Unit) => Unit is Ctl) {
+        return f => Controlled f;
+    }
+
+    function LambdaUnwrap() : NamedItems1 -> (Int, Int) {
+        return x -> x!;
+    }
+
+    function LambdaInvalidUnwrap() : (Int, Int)[] -> (Int, Int) {
+        return x -> x!;
+    }
+
+    function LambdaInvalid1() : Qubit => Unit is Adj {
+        return q => Operation(q);
+    }
+
+    function LambdaInvalid2() : Qubit => Unit is Adj + Ctl {
+        return q => Adjointable(q);
+    }
+
+    function LambdaInvalid3() : Int {
+        let f = (f, x) -> f(f, x);
+        return f(f, 0);
+    }
+
+    function LambdaInvalid4() : Unit -> Int {
+        mutable x = 0;
+        return () -> x;
+    }
+
+    function LambdaInvalid5() : Unit -> Int {
+        mutable x = 0;
+        return () -> x + x;
+    }
+
+    function LambdaInvalid6() : Int -> Int {
+        let x = 0;
+        return x -> x;
+    }
+
+    function LambdaInvalid7() : Int -> Int {
+        mutable x = 0;
+        return x -> x;
+    }
+
+    function LambdaInvalid8() : Unit {
+        let f = x -> x w/ Invalid <- 1;
+        let _ = f(NamedItems1(1, 0));
+    }
+
+    function LambdaInvalid9(xs : NamedItems1[]) : Int[] {
+        return Mapped(x -> x::Invalid, xs);
+    }
+
+    function LambdaInvalid10() : Unit {
+        let f = op -> Adjoint op();
+    }
+
+    operation LambdaInvalid11() : Unit {
+        let f = op => op();
+        f(Unitary);
+    }
+}

@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    
+  <PropertyGroup>
+    <AssemblyName>Microsoft.Quantum.CSharpGeneration</AssemblyName>
+    <TargetFramework>net6.0</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Context.fs" />
+    <Compile Include="SimulationCode.fs" />
+    <Compile Include="EntryPoint.fs" />
+    <Compile Include="RewriteStep.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Update="FSharp.Core" Version="4.7.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Compiler\Compiler.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RoslynWrapper\RoslynWrapper.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Tests.Microsoft.Quantum.CSharpGeneration$(PublicKeySuffix)</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+    
+</Project>

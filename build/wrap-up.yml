@@ -10,12 +10,6 @@ steps:
     testResultsFiles: '$(System.DefaultWorkingDirectory)/**/*.trx'
     testRunTitle: 'Q# compiler tests'
 
-- task: PublishSymbols@1
-  displayName: 'Publish symbols'
-  continueOnError: true
-  inputs:
-    SearchPattern: '**\bin\**\*.pdb'
-
 - task: CopyFiles@2
   displayName: 'Copy extensions to: $(VSIX.Outdir)'
   condition: succeededOrFailed()
@@ -31,3 +25,10 @@ steps:
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     artifactName: qsharp-compiler
+
+- task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+  displayName: 'Component detection'
+  condition: succeededOrFailed()
+  inputs:
+    failOnAlert: true
+    ignoreDirectories: 'src/QsCompiler/Tests.LanguageServer,src/QsCompiler/TestProjects'

@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+    <Metadata>
+        <Identity Id="45CAE273-BB49-4843-98E5-868E91603AA8" Version="#VSVSIX_VERSION#" Language="en-US" Publisher="Microsoft DevLabs" />
+        <DisplayName>Microsoft Quantum Development Kit</DisplayName>
+        <Description xml:space="preserve">Microsoft Quantum Development Kit provides support for developing quantum algorithms in the Q# programming language.</Description>
+        <MoreInfo>http://docs.microsoft.com/en-us/quantum/</MoreInfo>
+        <License>LICENSE.txt</License>
+        <ReleaseNotes>http://docs.microsoft.com/en-us/quantum/quantum-relnotes</ReleaseNotes>
+        <Icon>MS_Quantum_Spot_Dev-200.png</Icon>
+        <PreviewImage>MS_Quantum_Spot_Dev-200.png</PreviewImage>
+        <Tags>quantum, Q#</Tags>
+    </Metadata>
+    <Installation InstalledByMsi="false">
+        <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[17.0,18.0)">
+            <ProductArchitecture>amd64</ProductArchitecture>
+        </InstallationTarget>
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,18.0)">
+            <ProductArchitecture>amd64</ProductArchitecture>
+        </InstallationTarget>
+        <InstallationTarget Id="Microsoft.VisualStudio.Enterprise" Version="[17.0,18.0)">
+            <ProductArchitecture>amd64</ProductArchitecture>
+        </InstallationTarget>
+    </Installation>
+    <Dependencies>
+        <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
+    </Dependencies>
+    <Assets>
+        <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="syntax.pkgdef" />
+        <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%|" />
+        <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
+        <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" d:ProjectName="QSharpAppTemplate" d:TargetPath="|QSharpAppTemplate;TemplateProjectOutputGroup|" Path="ProjectTemplates" d:VsixSubPath="ProjectTemplates" />
+        <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" d:ProjectName="QSharpQuantinuumAppTemplate" d:TargetPath="|QSharpQuantinuumAppTemplate;TemplateProjectOutputGroup|" Path="ProjectTemplates" d:VsixSubPath="ProjectTemplates" />
+        <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" d:ProjectName="QSharpIonQAppTemplate" d:TargetPath="|QSharpIonQAppTemplate;TemplateProjectOutputGroup|" Path="ProjectTemplates" d:VsixSubPath="ProjectTemplates" />
+        <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" d:ProjectName="QSharpLibTemplate" d:TargetPath="|QSharpLibTemplate;TemplateProjectOutputGroup|" Path="ProjectTemplates" d:VsixSubPath="ProjectTemplates" />
+        <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" d:ProjectName="QSharpTestTemplate" d:TargetPath="|QSharpTestTemplate;TemplateProjectOutputGroup|" Path="ProjectTemplates" d:VsixSubPath="ProjectTemplates" />
+        <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" d:ProjectName="QSharpFileTemplate" d:TargetPath="|QSharpFileTemplate;TemplateProjectOutputGroup|" Path="ItemTemplates" d:VsixSubPath="ItemTemplates" />
+    </Assets>
+    <Prerequisites>
+        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[17.0.31804.368,18.0)" DisplayName="Visual Studio core editor" />
+        <Prerequisite Id="Microsoft.NetCore.Component.SDK" Version="[17.0.32002.159,)" DisplayName=".NET Core Development tools" />
+    </Prerequisites>
+</PackageManifest>
+

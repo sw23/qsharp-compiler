@@ -9,7 +9,9 @@ import { DotnetInfo, findIQSharpVersion } from './dotnet';
 import { IPackageInfo } from './packageInfo';
 import * as semver from 'semver';
 import { promisify } from 'util';
-import { oc } from 'ts-optchain';
+import { QSharpGenerator } from './yeoman-generator';
+
+import * as yeoman from 'yeoman-environment';
 
 export function registerCommand(context: vscode.ExtensionContext, name: string, action: () => void) {
     context.subscriptions.push(
@@ -22,119 +24,32 @@ export function registerCommand(context: vscode.ExtensionContext, name: string, 
     )
 }
 
-function createNewProjectAtUri(dotNetSdk: DotnetInfo, projectType: string, uri: vscode.Uri) {
-    let proc = cp.spawn(
-        dotNetSdk.path,
-        ["new", projectType, "-lang", "Q#", "-o", uri.fsPath]
-    );
-    
-    let errorMessage = "";
-    proc.stderr.on('data', data => {
-        errorMessage = errorMessage + data;
+export async function createNewProject(context: vscode.ExtensionContext) {
+    let env = yeoman.createEnv();
+    env.registerStub(QSharpGenerator, 'qsharp:app');
+    // Disable type checking on the env object at this point due to
+    // https://github.com/yeoman/environment/issues/273.
+    let anyEnv = env as any;
+    let err = await anyEnv.run('qsharp:app', {
+        extensionPath: context.extensionPath
     });
-
-    proc.on(
-        'exit', (code, signal) => {
-            if (code === 0) {
-                const openItem = "Open new project...";
-                vscode.window.showInformationMessage(
-                    `Successfully created new project at ${uri.fsPath}.`,
-                    openItem
-                ).then(
-                    (item) => {
-                        if (item === openItem) {
-                            vscode.commands.executeCommand(
-                                "vscode.openFolder",
-                                uri
-                            ).then(
-                                (value) => {},
-                                (value) => {
-                                    vscode.window.showErrorMessage("Could not open new project");
-                                }
-                            );
-                        }
-                    }
-                );
-            } else {
-                // Check if the problem was that the project templates are missing.
-                // If so, we can give a more helpful error message and offer the
-                // user to install templates.
-                if (errorMessage.includes("Q#") && errorMessage.includes("-lang")) {
-                    const installTemplatesItem = "Install project templates and retry";
-                    vscode.window.showErrorMessage(
-                        "Project creation failed. The Q# project templates may not be installed.",
-                        installTemplatesItem
-                    )
-                    .then(
-                        item => {
-                            if (item === installTemplatesItem) {
-                                vscode.commands.executeCommand(
-                                    "quantum.installTemplates"
-                                ).then(
-                                    () => createNewProjectAtUri(dotNetSdk, projectType, uri)
-                                );
-                            }
-                        }
-                    );
-                } else {
-                    vscode.window.showErrorMessage(
-                        `.NET Core SDK exited with code ${code} when creating a new project:\n${errorMessage}`
-                    );
-                }
-            }
-        }
-    );
-}
-
-export function createNewProject(dotNetSdk: DotnetInfo) {    
-    const projectTypes: {[key: string]: string} = {
-        "Standalone console application": "console",
-        "Quantum library": "classlib",
-        "Unit testing project": "xunit"
-    };
-    vscode.window.showQuickPick(
-        Object.keys(projectTypes)
-    ).then(
-        projectTypeSelection => {
-            if (projectTypeSelection === undefined) {
-                throw undefined;
-            }
-            let projectType = projectTypes[projectTypeSelection];
-            
-            vscode.window.showSaveDialog({
-                saveLabel: "Create Project"
-            }).then(
-                (uri) => {
-                    if (uri !== undefined) {
-                        if (uri.scheme !== "file") {
-                            vscode.window.showErrorMessage(
-                                "New projects must be saved to the filesystem."
-                            );
-                            throw new Error("URI scheme was not file.");
-                        }
-                        else {
-                            return uri;
-                        }
-                    } else {
-                        throw undefined;
-                    }
-                }
-            )
-            .then(uri => createNewProjectAtUri(dotNetSdk, projectType, uri));
-        }
-    );
+    if (err) {
+        let errorMessage = err.name + ": " + err.message;
+        console.log(errorMessage);
+        vscode.window.showErrorMessage(errorMessage);
+    }
 }
 
 export function installTemplates(dotNetSdk: DotnetInfo, packageInfo?: IPackageInfo) {
     let packageVersion =
-        oc(packageInfo).nugetVersion
+        packageInfo?.nugetVersion
         ? `::${packageInfo!.nugetVersion}`
         : "";
     let proc = cp.spawn(
         dotNetSdk.path,
         ["new", "--install", `Microsoft.Quantum.ProjectTemplates${packageVersion}`]
     );
-    
+
     let errorMessage = "";
     proc.stderr.on(
         'data', data => {
@@ -144,7 +59,7 @@ export function installTemplates(dotNetSdk: DotnetInfo, packageInfo?: IPackageIn
     proc.stdout.on(
         'data', data => {
             console.log("" + data);
-        }        
+        }
     )
 
     proc.on(
@@ -166,7 +81,7 @@ export function installTemplates(dotNetSdk: DotnetInfo, packageInfo?: IPackageIn
 
 export function openDocumentationHome() {
     return vscode.env.openExternal(
-        vscode.Uri.parse("https://docs.microsoft.com/quantum/")
+        vscode.Uri.parse("https://docs.microsoft.com/azure/quantum/")
     );
 }
 

@@ -8,10 +8,6 @@ namespace Microsoft.Quantum.Testing.General {
 
     operation DoNothing () : Unit {}
 
-    function Length<'T> (arr : 'T[]) : Int {
-        body intrinsic;
-    }
-
     function Function () : Unit {
         body intrinsic;
     }
@@ -69,5 +65,26 @@ namespace Microsoft.Quantum.Testing.General {
     operation CoinFlip() : Bool {
         body intrinsic;
     }
+
+    function DelayedId<'a>(x : 'a, u : Unit) : 'a {
+        return x;
+    }
+
+    function Mapped<'a, 'b>(mapper : ('a -> 'b), array : 'a[]) : 'b[] {
+        body intrinsic;
+    }
+
+    operation ApplyToEach<'a>(op : 'a => Unit, xs : 'a[]) : Unit {
+        body intrinsic;
+    }
+
+    function Fold<'state, 'a>(folder : ('state, 'a) -> 'state, state : 'state, array : 'a[]) : 'state {
+        body intrinsic;
+    }
 }
 
+namespace Microsoft.Quantum.Intrinsic {
+    function Message(message : String) : Unit {
+        body intrinsic;
+    }
+}

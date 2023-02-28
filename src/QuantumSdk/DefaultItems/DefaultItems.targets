@@ -1,0 +1,186 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- Work around issues in MSBuild versions prior to 16.0. -->
+  <PropertyGroup>
+    <MSBuildAllProjects Condition=" '$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0' ">
+      $(MSBuildAllProjects);$(MSBuildThisFileFullPath)
+    </MSBuildAllProjects>
+  </PropertyGroup>
+
+  <!-- We want access to the full path of packages as determined by msbuild to filter and reorder various package references. -->
+  <ItemDefinitionGroup>
+    <!-- Instead of using GeneratePathProperty="true" for each package reference,
+    we force packages containing compiler extensions or target-specific decompositions to include a .props file that defines this property,
+    or users to explicitly specify it for that reference. -->
+    <PackageReference IsQscReference ="false" IsTargetPackage="false" />
+    <ProjectReference IsQscReference ="false" IsTargetPackage="false" />
+  </ItemDefinitionGroup>
+
+
+  <!-- Resolution of verified configurable properties.
+  These properties need to live here to ensure that they are evaluated after the properties defined by the project file. -->
+
+  <!-- Resolving the OutputType to either QSharpExe or QSharpLibrary. -->
+  <PropertyGroup>
+    <ResolvedQSharpOutputType Condition="'$(OutputType)' == 'Library' Or '$(NoEntryPoint)' == 'true'">QSharpLibrary</ResolvedQSharpOutputType>
+    <ResolvedQSharpOutputType Condition="'$(OutputType)' == 'Exe' And '$(NoEntryPoint)' != 'true'">QSharpExe</ResolvedQSharpOutputType>
+    <ResolvedQSharpOutputType Condition="'$(ResolvedQSharpOutputType)' != 'QSharpLibrary' And '$(ResolvedQSharpOutputType)' != 'QSharpExe'"></ResolvedQSharpOutputType>
+    <ValidOutputTypes>Possible values are 'Exe', or 'Library'.</ValidOutputTypes>
+  </PropertyGroup>
+
+  <!-- Initializing the ResolvedProcessorArchitecture to either IonQProcessor, QCIProcessor, QuantinuumProcessor, RigettiProcessor, MicrosoftQuantum or Unspecified.-->
+  <PropertyGroup>
+    <!-- These architectures are in production and available for public use. -->
+    <ResolvedProcessorArchitecture Condition="$(ExecutionTarget.ToLowerInvariant().Contains('ionq'))">IonQProcessor</ResolvedProcessorArchitecture>
+    <ResolvedProcessorArchitecture Condition="$(ExecutionTarget.ToLowerInvariant().Contains('qci'))">QCIProcessor</ResolvedProcessorArchitecture>
+    <ResolvedProcessorArchitecture Condition="$(ExecutionTarget.ToLowerInvariant().Contains('quantinuum'))">QuantinuumProcessor</ResolvedProcessorArchitecture>
+    <ResolvedProcessorArchitecture Condition="$(ExecutionTarget.ToLowerInvariant().Contains('honeywell'))">QuantinuumProcessor</ResolvedProcessorArchitecture>
+    <ResolvedProcessorArchitecture Condition="$(ExecutionTarget.ToLowerInvariant().Contains('rigetti'))">RigettiProcessor</ResolvedProcessorArchitecture>
+    <ResolvedProcessorArchitecture Condition="$(ExecutionTarget.ToLowerInvariant().Contains('microsoft'))">MicrosoftQuantum</ResolvedProcessorArchitecture>
+    <ResolvedProcessorArchitecture Condition="$(ExecutionTarget.Equals('Any', StringComparison.InvariantCultureIgnoreCase))">Unspecified</ResolvedProcessorArchitecture>
+    <ResolvedProcessorArchitecture Condition="'$(ResolvedProcessorArchitecture)' != 'IonQProcessor' And '$(ResolvedProcessorArchitecture)' != 'QCIProcessor' And '$(ResolvedProcessorArchitecture)' != 'QuantinuumProcessor' And '$(ResolvedProcessorArchitecture)' != 'RigettiProcessor' And '$(ResolvedProcessorArchitecture)' != 'MicrosoftQuantum' And '$(ResolvedProcessorArchitecture)' != 'Unspecified'"></ResolvedProcessorArchitecture>
+    <ValidExecutionTargets>Possible values must match 'ionq*', 'qci*', 'quantinuum*', 'rigetti*', 'microsoft*', or 'Any'.</ValidExecutionTargets>
+  </PropertyGroup>
+
+  <!-- Resolving the TargetCapability to either BasicExecution, AdaptiveExecution, BasicQuantumFunctionality, BasicMeasurementFeedback, or FullComputation.-->
+  <PropertyGroup>
+    <_EnableBasicExecution>$(TargetCapability.Equals('BasicExecution', StringComparison.InvariantCultureIgnoreCase))</_EnableBasicExecution>
+    <_EnableAdaptiveExecution>$(TargetCapability.Equals('AdaptiveExecution', StringComparison.InvariantCultureIgnoreCase))</_EnableAdaptiveExecution>
+    <_EnableBasicQuantumFunctionality>$(TargetCapability.Equals('BasicQuantumFunctionality', StringComparison.InvariantCultureIgnoreCase))</_EnableBasicQuantumFunctionality>
+    <_EnableBasicMeasurementFeedback>$(TargetCapability.Equals('BasicMeasurementFeedback', StringComparison.InvariantCultureIgnoreCase))</_EnableBasicMeasurementFeedback>
+    <_EnableFullComputation>$(TargetCapability.Equals('FullComputation', StringComparison.InvariantCultureIgnoreCase))</_EnableFullComputation>
+    <!-- Set the ResolvedTargetCapability to a default choice for each ResolvedProcessorArchitecture. -->
+    <ResolvedTargetCapability Condition="'$(ResolvedProcessorArchitecture)' == 'QuantinuumProcessor'">BasicMeasurementFeedback</ResolvedTargetCapability>
+    <ResolvedTargetCapability Condition="'$(ResolvedProcessorArchitecture)' == 'IonQProcessor'">BasicQuantumFunctionality</ResolvedTargetCapability>
+    <ResolvedTargetCapability Condition="'$(ResolvedProcessorArchitecture)' == 'QCIProcessor'">AdaptiveExecution</ResolvedTargetCapability>
+    <ResolvedTargetCapability Condition="'$(ResolvedProcessorArchitecture)' == 'RigettiProcessor'">BasicExecution</ResolvedTargetCapability>
+    <ResolvedTargetCapability Condition="'$(ResolvedProcessorArchitecture)' == 'MicrosoftQuantum'">FullComputation</ResolvedTargetCapability>
+    <ResolvedTargetCapability Condition="'$(ResolvedProcessorArchitecture)' == 'Unspecified'">FullComputation</ResolvedTargetCapability>
+    <!-- Set the ResolvedTargetCapability to the specified TargetCapability, if that capability is supported by the ResolvedProcessorArchitecture. -->
+    <ResolvedTargetCapability Condition="'$(ResolvedProcessorArchitecture)' == 'QuantinuumProcessor' And ($(_EnableBasicExecution) Or $(_EnableAdaptiveExecution) Or $(_EnableBasicQuantumFunctionality) Or $(_EnableBasicMeasurementFeedback))">$(TargetCapability)</ResolvedTargetCapability>
+    <ResolvedTargetCapability Condition="'$(ResolvedProcessorArchitecture)' == 'IonQProcessor' And ($(_EnableBasicExecution) Or $(_EnableBasicQuantumFunctionality))">$(TargetCapability)</ResolvedTargetCapability>
+    <ResolvedTargetCapability Condition="'$(ResolvedProcessorArchitecture)' == 'QCIProcessor' And ($(_EnableBasicExecution) Or $(_EnableAdaptiveExecution))">$(TargetCapability)</ResolvedTargetCapability>
+    <ResolvedTargetCapability Condition="'$(ResolvedProcessorArchitecture)' == 'RigettiProcessor' And $(_EnableBasicExecution)">$(TargetCapability)</ResolvedTargetCapability>
+    <ResolvedTargetCapability Condition="'$(ResolvedProcessorArchitecture)' == 'MicrosoftQuantum' And $(_EnableFullComputation)">$(TargetCapability)</ResolvedTargetCapability>
+    <ResolvedTargetCapability Condition="'$(ResolvedProcessorArchitecture)' == 'Unspecified' And ($(_EnableBasicExecution) Or $(_EnableAdaptiveExecution) Or $(_EnableBasicQuantumFunctionality) Or $(_EnableBasicMeasurementFeedback) Or $(_EnableFullComputation))">$(TargetCapability)</ResolvedTargetCapability>
+    <ResolvedTargetCapability Condition="'$(TargetCapability)' != '' And '$(ResolvedTargetCapability)' != '$(TargetCapability)'"></ResolvedTargetCapability>
+    <!-- Define a suitable error message for failing the build when the TargetCapability is not compatible with the ExecutionTarget. -->
+    <ValidTargetCapabilities>The execution target supports the following target capabilities</ValidTargetCapabilities>
+    <ValidTargetCapabilities Condition="'$(ResolvedProcessorArchitecture)' == 'QuantinuumProcessor'">$(ValidTargetCapabilities): AdaptiveExecution, BasicExecution, BasicMeasurementFeedback, BasicQuantumFunctionality.</ValidTargetCapabilities>
+    <ValidTargetCapabilities Condition="'$(ResolvedProcessorArchitecture)' == 'IonQProcessor'">$(ValidTargetCapabilities): BasicExecution, BasicQuantumFunctionality.</ValidTargetCapabilities>
+    <ValidTargetCapabilities Condition="'$(ResolvedProcessorArchitecture)' == 'QCIProcessor'">$(ValidTargetCapabilities): AdaptiveExecution, BasicExecution.</ValidTargetCapabilities>
+    <ValidTargetCapabilities Condition="'$(ResolvedProcessorArchitecture)' == 'RigettiProcessor'">$(ValidTargetCapabilities): BasicExecution.</ValidTargetCapabilities>
+    <ValidTargetCapabilities Condition="'$(ResolvedProcessorArchitecture)' == 'MicrosoftQuantum'">$(ValidTargetCapabilities): FullComputation.</ValidTargetCapabilities>
+    <ValidTargetCapabilities Condition="'$(ResolvedProcessorArchitecture)' == 'Unspecified'">$(ValidTargetCapabilities): FullComputation, AdaptiveExecution, BasicExecution, BasicMeasurementFeedback, BasicQuantumFunctionality.</ValidTargetCapabilities>
+  </PropertyGroup>
+
+  <!-- Set all unspecified properties configuring the paths for output generated during Q# compilation. -->
+  <PropertyGroup>
+    <QuantumSdkPath>$(MSBuildThisFileDirectory)../</QuantumSdkPath>
+    <QuantumSdkPath>$([MSBuild]::Unescape('$(QuantumSdkPath)').Replace('\','/'))</QuantumSdkPath>
+    <DefaultEntryPointGeneration>dotnet "$(MSBuildThisFileDirectory)../tools/utils/Microsoft.Quantum.Sdk.DefaultEntryPoint.Generation.dll"</DefaultEntryPointGeneration>
+    <!-- true/false optional properties -->
+    <QirGeneration Condition="'$(QirOutputPath)' != '' And '$(QirGeneration)' == 'default'">true</QirGeneration>
+    <QirGeneration Condition="'$(QirOutputPath)' == '' And '$(QirGeneration)' == 'default'">false</QirGeneration>
+    <PerfDataGeneration Condition="'$(PerfDataOutputPath)' != '' And '$(PerfDataGeneration)' == 'default'">true</PerfDataGeneration>
+    <PerfDataGeneration Condition="'$(PerfDataOutputPath)' == '' And '$(PerfDataGeneration)' == 'default'">false</PerfDataGeneration>
+    <QSharpDocsGeneration Condition="'$(QSharpDocsOutputPath)' != '' And '$(QSharpDocsGeneration)' == 'default'">true</QSharpDocsGeneration>
+    <QSharpDocsGeneration Condition="'$(QSharpDocsOutputPath)' == '' And '$(QSharpDocsGeneration)' == 'default'">false</QSharpDocsGeneration>
+    <CSharpGeneration Condition="$(QirGeneration)">false</CSharpGeneration>
+    <!-- Resolving the QuantumInstructionSet to either Type1, Type2, Type3, Type4 or Default.-->
+    <EnableQirSubmission Condition="'$(ResolvedProcessorArchitecture)' == 'MicrosoftQuantum' Or '$(ResolvedTargetCapability)' == 'AdaptiveExecution' Or '$(ResolvedTargetCapability)' == 'BasicExecution'">true</EnableQirSubmission>
+    <ResolvedQuantumInstructionSet Condition="'$(ResolvedProcessorArchitecture)' == 'QuantinuumProcessor'">Type1</ResolvedQuantumInstructionSet>
+    <ResolvedQuantumInstructionSet Condition="'$(ResolvedProcessorArchitecture)' == 'IonQProcessor' And !$(EnableQirSubmission)">Type2</ResolvedQuantumInstructionSet>
+    <ResolvedQuantumInstructionSet Condition="'$(ResolvedProcessorArchitecture)' == 'IonQProcessor' And $(EnableQirSubmission)">Type4</ResolvedQuantumInstructionSet>
+    <ResolvedQuantumInstructionSet Condition="'$(ResolvedProcessorArchitecture)' == 'QCIProcessor'">Type3</ResolvedQuantumInstructionSet>
+    <ResolvedQuantumInstructionSet Condition="'$(ResolvedProcessorArchitecture)' == 'RigettiProcessor'">Type4</ResolvedQuantumInstructionSet>
+    <ResolvedQuantumInstructionSet Condition="'$(ResolvedProcessorArchitecture)' == 'MicrosoftQuantum'">Default</ResolvedQuantumInstructionSet>
+    <ResolvedQuantumInstructionSet Condition="'$(ResolvedProcessorArchitecture)' == 'Unspecified'">Default</ResolvedQuantumInstructionSet>
+    <!-- path compatible assembly name -->
+    <PathCompatibleAssemblyName>$([System.String]::Copy('$(AssemblyName)').Replace(' ',''))</PathCompatibleAssemblyName>
+    <!-- output path for files generated during compilation -->
+    <GeneratedFilesOutputPath Condition="'$(GeneratedFilesOutputPath)' == ''">$(BaseIntermediateOutputPath)qsharp/</GeneratedFilesOutputPath>
+    <GeneratedFilesOutputPath>$([MSBuild]::Unescape('$(GeneratedFilesOutputPath)').Replace('\','/'))</GeneratedFilesOutputPath>
+    <GeneratedFilesOutputPath Condition="!HasTrailingSlash('$(GeneratedFilesOutputPath)')">$(GeneratedFilesOutputPath)/</GeneratedFilesOutputPath>
+    <!-- output path for generating qsc config file -->
+    <QscBuildConfigOutputPath Condition="'$(QscBuildConfigOutputPath)' == ''">$(GeneratedFilesOutputPath)config/</QscBuildConfigOutputPath>
+    <QscBuildConfigOutputPath>$([MSBuild]::Unescape('$(QscBuildConfigOutputPath)').Replace('\','/'))</QscBuildConfigOutputPath>
+    <QscBuildConfigOutputPath Condition="!HasTrailingSlash('$(QscBuildConfigOutputPath)')">$(QscBuildConfigOutputPath)/</QscBuildConfigOutputPath>
+    <!-- output path for generating QIR -->
+    <QirOutputPath Condition="'$(QirOutputPath)' == ''">$(MSBuildProjectDirectory)/qir/</QirOutputPath>
+    <QirOutputPath>$([MSBuild]::Unescape('$(QirOutputPath)').Replace('\','/'))</QirOutputPath>
+    <QirOutputPath Condition="!HasTrailingSlash('$(QirOutputPath)')">$(QirOutputPath)/</QirOutputPath>
+    <!-- output path for generating documentation -->
+    <QSharpDocsOutputPath Condition="'$(QSharpDocsOutputPath)' == ''">$(MSBuildProjectDirectory)/docs/</QSharpDocsOutputPath>
+    <QSharpDocsOutputPath>$([MSBuild]::Unescape('$(QSharpDocsOutputPath)').Replace('\','/'))</QSharpDocsOutputPath>
+    <QSharpDocsOutputPath Condition="!HasTrailingSlash('$(QSharpDocsOutputPath)')">$(QSharpDocsOutputPath)/</QSharpDocsOutputPath>
+    <!-- output path for generating perf data -->
+    <PerfDataOutputPath Condition="'$(PerfDataOutputPath)' == ''">$(MSBuildProjectDirectory)/perf/</PerfDataOutputPath>
+    <PerfDataOutputPath>$([MSBuild]::Unescape('$(PerfDataOutputPath)').Replace('\','/'))</PerfDataOutputPath>
+    <PerfDataOutputPath Condition="!HasTrailingSlash('$(PerfDataOutputPath)')">$(PerfDataOutputPath)/</PerfDataOutputPath>
+  </PropertyGroup>
+
+
+  <!-- Populates the ResolvedTargetSpecificDecompositions item group. -->
+  <Target Name="ResolveTargetPackage" DependsOnTargets="ResolveProjectReferences;ResolveAssemblyReferences" BeforeTargets="BeforeQSharpCompile">
+    <ItemGroup>
+      <ResolvedTargetSpecificDecompositions Include="@(_ResolvedProjectReferencePaths)" Condition="@(_ResolvedProjectReferencePaths->Count()) &gt; 0 And %(_ResolvedProjectReferencePaths.IsTargetPackage)" />
+    </ItemGroup>
+    <ItemGroup>
+      <_TargetPackageReference Include="@(PackageReference)" Condition="@(PackageReference->Count()) &gt; 0 And %(PackageReference.IsTargetPackage)" />
+      <_TargetPackageReferencePathProperty Include="@(_TargetPackageReference->'QscRef_$([System.String]::Copy('%(_TargetPackageReference.Identity)').Replace('.','_'))')" />
+      <_ResolvedTargetPackageReference Include="$(%(_TargetPackageReferencePathProperty.Identity))" />
+      <ResolvedTargetSpecificDecompositions Include="@(_ResolvedTargetPackageReference->Split(`;`))" />
+    </ItemGroup>
+    <Error
+      Condition="@(ResolvedTargetSpecificDecompositions->Count()) == 0 And @(_ResolvedTargetPackageReference->Count()) &gt; 0"
+      Text="Invalid target package. The target package is expected to specify the dll containing the decompositions to load." />
+    <Message
+      Condition="@(ResolvedTargetSpecificDecompositions->Count()) &gt; 0 And ('$(QscVerbosity)' == 'Detailed' Or '$(QscVerbosity)' == 'Diagnostic')"
+      Text="Resolved target package assemblies: @(ResolvedTargetSpecificDecompositions)"
+      Importance="High" />
+  </Target>
+
+  <!-- Populates the ResolvedQSharpReferences item group. -->
+  <Target Name="ResolveQSharpReferences" DependsOnTargets="ResolveTargetPackage;ResolveAssemblyReferences;_CopyFilesMarkedCopyLocal" BeforeTargets="BeforeQSharpCompile">
+    <ItemGroup>
+      <ResolvedQSharpReferences
+        Include="@(ReferencePath)"
+        Exclude="@(ResolvedTargetSpecificDecompositions)"
+        Condition="$([System.Text.RegularExpressions.Regex]::IsMatch(%(FullPath), '(?i)system.|mscorlib|netstandard.library|microsoft.netcore.app|csharp|fsharp|microsoft.visualstudio|microsoft.testplatform|microsoft.codeanalysis|fparsec|newtonsoft|roslynwrapper|yamldotnet|markdig|serilog')) == false" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Populates ResolvedQscReferences, ResolvedQscReferencesAndPriorities, QscProjectReference and QscPackageReference. -->
+  <Target Name="ResolveQscReferences" DependsOnTargets="ResolveProjectReferences;ResolveAssemblyReferences" BeforeTargets="BeforeQSharpCompile">
+    <!-- get the assembly path for all relevant project references which are passed as qsc references -->
+    <ItemGroup>
+      <QscProjectReference Include="@(_ResolvedProjectReferencePaths)" Condition="@(_ResolvedProjectReferencePaths->Count()) &gt; 0 And %(_ResolvedProjectReferencePaths.IsQscReference)" />
+      <_RelevantQscProjectReference Include="@(QscProjectReference->WithMetadataValue('ExecutionTarget',''))" />
+      <_RelevantQscProjectReference Include="@(QscProjectReference->WithMetadataValue('ExecutionTarget','Any'))" />
+      <_RelevantQscProjectReference Include="@(QscProjectReference->WithMetadataValue('ExecutionTarget','$(ExecutionTarget)'))" />
+    </ItemGroup>
+    <!-- get the path property name for all relevant package references which are passed as qsc references -->
+    <ItemGroup>
+      <QscPackageReference Include="@(PackageReference)" Condition="@(PackageReference->Count()) &gt; 0 And %(PackageReference.IsQscReference)" />
+      <_RelevantQscPackageReference Include="@(QscPackageReference->WithMetadataValue('ExecutionTarget',''))" />
+      <_RelevantQscPackageReference Include="@(QscPackageReference->WithMetadataValue('ExecutionTarget','Any'))" />
+      <_RelevantQscPackageReference Include="@(QscPackageReference->WithMetadataValue('ExecutionTarget','$(ExecutionTarget)'))" />
+      <_RelevantQscPackageReferencePathProperty Include="@(_RelevantQscPackageReference->'QscRef_$([System.String]::Copy('%(_RelevantQscPackageReference.Identity)').Replace('.','_'))')" />
+    </ItemGroup>
+    <!-- add the assembly paths for all relevant qsc references and their priorities to ResolvedQscReferences -->
+    <ItemGroup>
+      <_ResolvedQscReferences Include="%(_RelevantQscProjectReference.Identity)" Priority="%(_RelevantQscProjectReference.Priority)" />
+      <_ResolvedQscReferences Include="$(%(_RelevantQscPackageReferencePathProperty.Identity))" Priority="%(_RelevantQscPackageReferencePathProperty.Priority)" />
+      <_InvalidQscReferences Include="@(_ResolvedQscReferences)" Condition="'%(_ResolvedQscReferences.Identity)' == ''" />
+      <ResolvedQscReferences Include="@(_ResolvedQscReferences->Split(`;`))" Condition="'%(_ResolvedQscReferences.Identity)' != ''" />
+      <ResolvedQscReferencesAndPriorities Include="(%(ResolvedQscReferences.Identity), %(ResolvedQscReferences.Priority))" />
+    </ItemGroup>
+    <Warning Condition="@(_InvalidQscReferences->Count()) &gt; 0" Text="One or more qsc reference(s) could not be identified correctly due to a lack of the expected properties." />
+    <Message
+      Condition="@(ResolvedQscReferences->Count()) &gt; 0 And ('$(QscVerbosity)' == 'Detailed' Or '$(QscVerbosity)' == 'Diagnostic')"
+      Text="Resolved qsc reference: %(ResolvedQscReferences.Identity) (priority %(ResolvedQscReferences.Priority))"
+      Importance="High" />
+  </Target>
+
+</Project>

@@ -11,13 +11,24 @@ steps:
 # Pre-reqs
 ##
 - task: NuGetToolInstaller@0
-  displayName: 'Use NuGet 4.9.3'
+  displayName: Use NuGet 5.8.1
   inputs:
-    versionSpec: '4.9.3'
+    versionSpec: 5.8.1
 
-- task: Npm@1
-  displayName: 'Install vsce'
+- task: UseDotNet@2
+  displayName: Use .NET SDK 6.0.300
   inputs:
-    command: custom
-    verbose: false
-    customCommand: 'install -g vsce'
+    useGlobalJson: true
+
+- task: UseDotNet@2
+  displayName: Use .NET Core SDK 3.1.416
+  inputs:
+    version: 3.1.416
+
+# Make sure that npm is up to date, as is required by our VS Code extension
+# build.
+- task: Npm@1
+  inputs:
+    command: 'custom'
+    customCommand: 'install -g npm@latest'
+

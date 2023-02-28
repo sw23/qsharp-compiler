@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>10.0</LangVersion>
+    <RootNamespace>Microsoft.Quantum.QsCompiler.QirGeneration</RootNamespace>
+    <AssemblyName>Microsoft.Quantum.QirGeneration</AssemblyName>
+    <!-- needed for local development when loading the source code version of the QIR generation as extension -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <Nullable>annotations</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Compiler\Compiler.csproj" />
+    <ProjectReference Include="..\LlvmBindings\LlvmBindings.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,4 +1,2 @@
-
 # Files generated using .v.template
-Common/AssemblyCommon.cs
-QsharpVSIX/source.extension.vsixmanifest
+QSharpVsix/source.extension.vsixmanifest

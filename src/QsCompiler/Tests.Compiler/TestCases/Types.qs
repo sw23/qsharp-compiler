@@ -4,6 +4,35 @@
 // This file contains test cases related to user defined types 
 // and test cases such that verifications accross different namespaces can be tested
 
+
+// needs to be available to test attributes
+namespace Microsoft.Quantum.Core {
+
+    @Attribute()
+    newtype IntTupleAttribute = (Int, Int);
+}
+
+namespace Microsoft.Quantum.Testing.Attributes {
+
+    @Attribute()
+    newtype IntAttribute = Int;
+
+    @Attribute()
+    newtype IntTupleAttribute = (Int, Int);
+
+    @Attribute()
+    newtype StringAttribute = String;
+
+    @Attribute()
+    newtype BigIntArrayAttribute = BigInt[];
+
+    @Attribute()
+    newtype PauliResultAttribute = (Pauli, Result);
+
+    @Attribute()
+    newtype CustomAttribute = Unit;
+}
+
 namespace Microsoft.Quantum.Testing.TypeChecking {
 
     newtype NamedItems1 = (Re : Int, Im : Int);
@@ -42,6 +71,10 @@ namespace Microsoft.Quantum.Testing.TypeChecking {
     newtype OpType12 = (Int, Unit => Unit is Adj);
     newtype OpType13 = ((Unit => Unit) is Adj, Int);
     newtype OpType14 = (Int, (Unit => Unit) is Adj);
+    newtype OpType15 = ((Int, Qubit) => Int);
+    newtype OpType16 = (Qubit => Unit : Adjoint);
+    newtype OpType17 = (Qubit => Unit : Adjoint, Controlled);
+    newtype OpType18 = ((Int, Qubit, (Qubit, Qubit), Result) => Unit : Adjoint, Controlled);
 
     newtype FctType1 = (Unit -> Unit);
     newtype FctType2 = ((Unit -> Unit), Int);
@@ -138,4 +171,19 @@ namespace Microsoft.Quantum.Testing.GlobalVerification.N4 {
     function Default<'T> () : 'T {
         return (new 'T[1])[0];
     }
+}
+
+/// Namespace used to test conflict with namespace name
+namespace Microsoft.Quantum.Testing.GlobalVerification.NamingConflict4 {
+    newtype Dummy = Unit;
+}
+
+/// Namespace used to test conflict with namespace name
+namespace Microsoft.Quantum.Testing.GlobalVerification.NamingConflict5 {
+    newtype Dummy = Unit;
+}
+
+/// Namespace used to test conflict with namespace name
+namespace Microsoft.Quantum.Testing.GlobalVerification.NamingConflict6 {
+    newtype Dummy = Unit;
 }

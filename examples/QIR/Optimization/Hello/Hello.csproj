@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.Quantum.Sdk/0.27.244707">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <QirGeneration>true</QirGeneration>
+    <BuildOutputPath>$(MSBuildThisFileDirectory)build</BuildOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Quantum.Simulators" Version="0.27.253010" GeneratePathProperty="true" />
+  </ItemGroup>
+
+  <Target Name="GetDependencies" AfterTargets="Build">
+    <PropertyGroup>
+      <SimulatorFolder Condition="$([MSBuild]::IsOsPlatform('OSX'))">$(PkgMicrosoft_Quantum_Simulators)/runtimes/osx-x64/native</SimulatorFolder>
+      <SimulatorFolder Condition="$([MSBuild]::IsOsPlatform('Windows'))">$(PkgMicrosoft_Quantum_Simulators)/runtimes/win-x64/native</SimulatorFolder>
+      <SimulatorFolder Condition="$([MSBuild]::IsOsPlatform('Linux'))">$(PkgMicrosoft_Quantum_Simulators)/runtimes/linux-x64/native</SimulatorFolder>
+    </PropertyGroup>
+    <ItemGroup>
+      <_SimulatorLibraries Include="$(SimulatorFolder)/*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_SimulatorLibraries)" DestinationFolder="$(BuildOutputPath)" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

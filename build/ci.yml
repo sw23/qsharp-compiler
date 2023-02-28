@@ -1,23 +1,66 @@
-name: $(Build.Major).$(Build.Minor).$(date:yyMM).$(DayOfMonth)$(rev:rr)
-trigger:
-- master
+name: $(Build.Major).$(Build.Minor).$(DayOfMonth)$(rev:rr)
 
 variables:
   Build.Major: 0
-  Build.Minor: 0
+  Build.Minor: 16
   Assembly.Version: $(Build.BuildNumber)
   Assembly.Constants: ''
   Drops.Dir: $(Build.ArtifactStagingDirectory)/drops
+  Nuget.Outdir: $(Drops.Dir)/nugets
   VSIX.Outdir: $(Drops.Dir)/vsix
+  Blobs.Outdir: $(Drops.Dir)/blobs
+
+trigger: none
+
+pr:
+- main
+- feature/*
+- features/*
+- release/*
+
+schedules:
+- cron: "0 9 * * Sat"
+  displayName: 'Build for Component Governance'
+  branches:
+    include:
+    - main
+  always: true
 
 
 jobs:
-- job: "QsCompiler"
+- job: Build
   steps:
+  - template: init.yml
   - template: steps.yml
+  - template: wrap-up.yml
+  strategy:
+    matrix:
+      linux:
+        imageName: 'ubuntu-latest'
+      mac:
+        imageName: 'macOS-latest'
+      windows:
+        imageName: 'windows-latest'
+  pool:
+    vmImage: $(imageName)
 
-  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
-    displayName: 'Component detection'
+
+- job: Check
+  steps:
+  - task: UseDotNet@2
+    displayName: Use .NET SDK 6.0.300
     inputs:
-      failOnAlert: true
+      useGlobalJson: true
 
+  - script: dotnet tool restore
+    displayName: Restore .NET tools
+
+  - script: dotnet tool run fantomas -- --check --recurse .
+    displayName: F# style
+
+  - script: |
+      dotnet restore QsCompiler.sln
+      dotnet tool run dotnet-fsharplint lint QsCompiler.sln
+    displayName: F# lint
+  pool:
+    vmImage: ubuntu-latest

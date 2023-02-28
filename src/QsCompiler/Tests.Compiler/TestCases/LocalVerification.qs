@@ -3,9 +3,432 @@
 
 /// This namespace contains test cases for expression and statement verification
 namespace Microsoft.Quantum.Testing.LocalVerification {
-
+    open Microsoft.Quantum.Diagnostics;
     open Microsoft.Quantum.Testing.General;
     open Microsoft.Quantum.Testing.TypeChecking;
+
+    function UnusedTypeParam<'a>() : Unit {}
+
+    operation Sequence<'a, 'b>(f : 'a => Unit, g : 'b => Unit) : ('a, 'b) => Unit {
+        fail "Not implemented.";
+    }
+
+    // type argument inference
+
+    operation TypeArgumentsInference1<'T>(cnt: Int, arg : 'T) : Unit {
+        let recur = TypeArgumentsInference1(3, _);
+        recur(arg);
+    }
+
+    operation TypeArgumentsInference2<'T>(cnt: Int, arg : 'T) : Unit {
+        let tuple = (1, (TypeArgumentsInference2(3, _), ""));
+        let (_, (recur, _)) = tuple;
+        recur(arg);
+    }
+
+    operation TypeArgumentsInference3<'T>(cnt: Int, arg : 'T) : Unit {
+        let arr = [TypeArgumentsInference3(1, _), TypeArgumentsInference2(_, arg)];
+        arr[0](arg);
+    }
+
+    operation TypeArgumentsInference4<'T>(cnt: Int, arg : 'T) : Unit {
+        mutable arr = [TypeArgumentsInference4(1, _), TypeArgumentsInference2(_, arg)];
+        arr[0](arg);
+    }
+
+    operation TypeArgumentsInference5<'T>(cnt: Int, arg : 'T) : Unit {
+        let arr = [TypeArgumentsInference5(1, _)];
+        mutable _arr = [TypeArgumentsInference5(1, _)];
+        arr[0](arg);
+    }
+
+    operation TypeArgumentsInference6<'T>(cnt: Int, arg : 'T) : Unit {
+        mutable arr = [];
+        set arr = [TypeArgumentsInference6(1, _)];
+        arr[0](arg);
+    }
+
+    operation TypeArgumentsInference7<'T>(cnt: Int, arg : 'T) : Unit {
+        mutable arr = [];
+        set arr += [TypeArgumentsInference7(1, _)];
+        arr[0](arg);
+    }
+
+    operation TypeArgumentsInference8<'T>(cnt: Int, arg : 'T) : Unit {
+        mutable arr = new ('T => Unit)[1];
+        set arr w/= 0 <- TypeArgumentsInference8(1, _);
+        set arr w/= 0 .. 0 <- [TypeArgumentsInference8(1, _)];
+        arr[0](arg);
+    }
+
+    operation TypeArgumentsInference9<'T>(cnt: Int, arg : 'T) : Unit {
+        let arr = new ('T => Unit)[1];
+        let foo = arr w/ 0 <- TypeArgumentsInference9(1, _);
+        let bar = arr w/ 0 .. 0 <- [TypeArgumentsInference9(1, _)];
+        foo[0](arg);
+    }
+
+    operation TypeArgumentsInference10<'T>(cnt: Int, arg : 'T) : Unit {
+        mutable arr = [];
+        set arr += [TypeArgumentsInference12(_, arg), TypeArgumentsInference12(_, "")];
+        arr[0](cnt - 1);
+    }
+
+    operation TypeArgumentsInference11<'T>(cnt: Int, arg : 'T) : Unit {
+        let r1 = TypeArgumentsInference11(_, "");
+        let recur = TypeArgumentsInference11(_, arg);
+        recur(cnt - 1);
+    }
+
+    operation TypeArgumentsInference12<'T>(cnt: Int, arg : 'T) : Unit {
+        let t1 = (1, (TypeArgumentsInference12(_, 1), ""));
+        let tuple = (1, (TypeArgumentsInference12(_, arg), ""));
+        let (_, (recur, _)) = tuple;
+        recur(cnt - 1);
+    }
+
+    operation TypeArgumentsInference13<'T>(cnt: Int, arg : 'T) : Unit {
+        let arr = [TypeArgumentsInference13(_, arg), TypeArgumentsInference13(_, 1.)];
+        mutable _arr = [TypeArgumentsInference13(_, arg), TypeArgumentsInference13(_, 1.)];
+        arr[0](cnt - 1);
+    }
+
+    operation TypeArgumentsInference14<'T>(cnt: Int, arg : 'T) : Unit {
+        mutable arr = [];
+        set arr = [TypeArgumentsInference14(_, PauliX)];
+        set arr = [TypeArgumentsInference14(_, arg)];
+        arr[0](cnt - 1);
+    }
+
+    operation TypeArgumentsInference15<'T>(cnt: Int, arg : 'T) : Unit {
+        mutable arr = [];
+        set arr += [TypeArgumentsInference15(_, PauliX)];
+        set arr += [TypeArgumentsInference15(_, arg)];
+        arr[1](cnt - 1);
+    }
+
+    operation TypeArgumentsInference16<'T>(cnt: Int, arg : 'T) : Unit {
+        mutable arr = new (Int => Unit)[1];
+        set arr w/= 0 <- TypeArgumentsInference16(_, arg);
+        set arr w/= 0 <- TypeArgumentsInference16(_, 5);
+        arr[0](cnt - 1);
+    }
+
+    operation TypeArgumentsInference17<'T>(cnt: Int, arg : 'T) : Unit {
+        mutable arr = new (Int => Unit)[2];
+        set arr w/= 0 .. 1 <- [TypeArgumentsInference17(_, arg), TypeArgumentsInference16(_, arg)];
+        arr[0](cnt - 1);
+    }
+
+    operation TypeArgumentsInference18<'T>(cnt: Int, arg : 'T) : Unit {
+        let arr = new (Int => Unit)[1];
+        let foo = arr w/ 0 <- TypeArgumentsInference18(_, arg);
+        let bar = arr w/ 0 <- TypeArgumentsInference18(_, Zero);
+    }
+
+    operation TypeArgumentsInference19<'T>(arg : 'T) : 'T {
+        return TypeArgumentsInference19<'T>(arg);
+    }
+
+    operation TypeArgumentsInference20<'T>(arg : 'T) : 'T {
+        return TypeArgumentsInference20(arg);
+    }
+
+    function TypeArgumentsInference21<'A>(a : 'A) : Unit {
+        TypeArgumentsInference21<'A>(3);
+    }
+
+    function TypeArgumentsInference22<'A>(a : 'A) : Unit {
+        TypeArgumentsInference22<Int>(a);
+    }
+
+    function TypeArgumentsInference23<'A, 'B>(a : 'A, b : 'B) : Unit {
+        TypeArgumentsInference23<_,_>(a, b);
+    }
+
+    function TypeArgumentsInference24<'A, 'B>(a : 'A, b : 'B) : Unit {
+        TypeArgumentsInference24<'A,'B>(a, b);
+    }
+
+    function TypeArgumentsInference25<'A,'B>(a : 'A, b : 'B) : Unit {
+        mutable arr = new (Int -> Unit)[1];
+        set arr w/= 0 <- TypeArgumentsInference25<Int, _>(_, b);
+    }
+
+    function TypeArgumentsInference26<'A,'B>(a : 'A, b : 'B) : Unit {
+        mutable arr = new ('A -> Unit)[1];
+        set arr w/= 0 <- TypeArgumentsInference26<'A, _>(_, 4.);
+    }
+
+    function TypeArgumentsInference27<'A,'B>(a : 'A, b : 'B) : Unit {
+        TypeArgumentsInference27<'A, _>(1, 4.);
+    }
+
+    function TypeArgumentsInference28<'A,'B>(a : 'A, b : 'B) : Unit {
+        TypeArgumentsInference28<_, Int>(a, b);
+    }
+
+    function TypeArgumentsInference29<'A,'B>(a : 'A, b : 'B) : Unit {
+        TypeArgumentsInference29<'A, 'A>(a, a);
+    }
+
+    function TypeArgumentsInference30<'A,'B>(a : 'A, b : 'B) : Unit {
+        TypeArgumentsInference30<'A, 'A>(a, 3);
+    }
+
+    function TypeArgumentsInference31<'A,'B>(a : 'A, b : 'B) : Unit {
+        TypeArgumentsInference31<'A, 'A>(a, b);
+    }
+
+    function TypeArgumentsInference32<'A>(a : 'A) : Unit {
+        TypeArgumentsInference21<'A>(3);
+    }
+
+    function TypeArgumentsInference33<'A>(a : 'A) : Unit {
+        TypeArgumentsInference21<Int>(a);
+    }
+
+    function TypeArgumentsInference34<'A, 'B>(a : 'A, b : 'B) : Unit {
+        TypeArgumentsInference23<_,_>(a, b);
+    }
+
+    function TypeArgumentsInference35<'A, 'B>(a : 'A, b : 'B) : Unit {
+        TypeArgumentsInference23<'A,'B>(a, b);
+    }
+
+    function TypeArgumentsInference36<'A,'B>(a : 'A, b : 'B) : Unit {
+        mutable arr = new (Int -> Unit)[1];
+        set arr w/= 0 <- TypeArgumentsInference23<Int, _>(_, b);
+    }
+
+    function TypeArgumentsInference37<'A,'B>(a : 'A, b : 'B) : Unit {
+        mutable arr = new ('A -> Unit)[1];
+        set arr w/= 0 <- TypeArgumentsInference23<'A, _>(_, 4.);
+    }
+
+    function TypeArgumentsInference38<'A,'B>(a : 'A, b : 'B) : Unit {
+        TypeArgumentsInference23<'A, _>(1, 4.);
+    }
+
+    function TypeArgumentsInference39<'A,'B>(a : 'A, b : 'B) : Unit {
+        TypeArgumentsInference23<_, Int>(a, b);
+    }
+
+    function TypeArgumentsInference40<'A,'B>(a : 'A, b : 'B) : Unit {
+        TypeArgumentsInference23<'A, 'A>(a, a);
+    }
+
+    function TypeArgumentsInference41<'A,'B>(a : 'A, b : 'B) : Unit {
+        TypeArgumentsInference23<'A, 'A>(a, 3);
+    }
+
+    function TypeArgumentsInference42<'A,'B>(a : 'A, b : 'B) : Unit {
+        TypeArgumentsInference23<'A, 'A>(a, b);
+    }
+
+    function TypeArgumentsInference43() : Unit {
+        Default();
+    }
+
+    function TypeArgumentsInference44() : Unit {
+        let _ = Default();
+    }
+
+    function TypeArgumentsInference45() : Unit {
+        UnusedTypeParam();
+    }
+
+    function TypeArgumentsInference46() : Unit {
+        let _ = GenericFunction(Default);
+    }
+
+    operation TypeArgumentsInference47() : Unit {
+        Sequence(GenericOperation, GenericOperation)("Foo", 3);
+    }
+
+    // variable declarations
+
+    operation VariableDeclaration1 () : Unit {
+        use q = Qubit() {}
+    }
+
+    operation VariableDeclaration2 () : Unit {
+        use q = (Qubit()) {}
+    }
+
+    operation VariableDeclaration3 () : Unit {
+        use (q) = Qubit() {}
+    }
+
+    operation VariableDeclaration4 () : Unit {
+        use (q) = (Qubit()) {}
+    }
+
+    operation VariableDeclaration5 () : Unit {
+        use (q1, q2) = (Qubit(), Qubit()) {}
+    }
+
+    operation VariableDeclaration6 () : Unit {
+        use (q1, (q2)) = (Qubit(), Qubit()) {}
+    }
+
+    operation VariableDeclaration7 () : Unit {
+        use (qs) = (Qubit(), Qubit()) {}
+    }
+
+    operation VariableDeclaration8 () : Unit {
+        use qs = (Qubit(), Qubit()) {}
+    }
+
+    operation VariableDeclaration9 () : Unit {
+        use (q1, q2) = (Qubit()) {}
+    }
+
+    operation VariableDeclaration10 () : Unit {
+        use (q1, q2, q3) = (Qubit(), (Qubit(), Qubit())) {}
+    }
+
+    operation VariableDeclaration11<'T>(cnt: Int, arg : 'T) : Unit {
+        let recur = VariableDeclaration11;
+        recur(cnt - 1, arg);
+    }
+
+    operation VariableDeclaration12<'T>(cnt: Int, arg : 'T) : Unit {
+        let tuple = (1, (VariableDeclaration12, "")); // not allowed
+        let (_, recur) = tuple;
+        recur(cnt - 1, arg);
+    }
+
+    operation VariableDeclaration13<'T>(cnt: Int, arg : 'T) : Unit {
+        mutable arr = [];
+        set arr += [VariableDeclaration12];
+        arr[0](cnt - 1, arg);
+    }
+
+    operation VariableDeclaration14<'T>(cnt: Int, arg : 'T) : Unit {
+        let arr = [VariableDeclaration14];
+        mutable _arr = [VariableDeclaration14];
+        arr[0](cnt - 1, arg);
+    }
+
+    operation VariableDeclaration15<'T>(cnt: Int, arg : 'T) : Unit {
+        mutable arr = [];
+        set arr = [VariableDeclaration15];
+        arr[0](cnt - 1, arg);
+    }
+
+    operation VariableDeclaration16<'T>(cnt: Int, arg : 'T) : Unit {
+        mutable arr = [];
+        set arr += [VariableDeclaration16];
+        arr[0](cnt - 1, arg);
+    }
+
+    operation VariableDeclaration17<'T>(cnt: Int, arg : 'T) : Unit {
+        mutable arr = new ((Int, 'T) => Unit)[1];
+        set arr w/= 0 <- VariableDeclaration17;
+        arr[0](cnt - 1, arg);
+    }
+
+    operation VariableDeclaration18<'T>(cnt: Int, arg : 'T) : Unit {
+        mutable arr = new ((Int, 'T) => Unit)[2];
+        set arr w/= 0 .. 1 <- [VariableDeclaration18, VariableDeclaration17];
+        arr[0](cnt - 1, arg);
+    }
+
+    operation VariableDeclaration19<'T>(arg : 'T) : Unit {
+        let arr = new ('T => Unit)[1];
+        let foo = arr w/ 0 <- VariableDeclaration19;
+    }
+
+    operation VariableDeclaration20<'T>(cnt: Int, arg : 'T) : Unit {
+        mutable arr = new ((Int, 'T) => Unit)[2];
+        set arr w/= 0 .. 0 <- [VariableDeclaration17];
+        arr[0](cnt - 1, arg);
+    }
+
+    operation VariableDeclaration21(cnt: Int, arg : Double) : Unit {
+        let recur = VariableDeclaration21;
+        let tuple = (1, (VariableDeclaration21, ""));
+        let a1 = [VariableDeclaration21];
+        mutable a2 = [VariableDeclaration21];
+        mutable arr = [];
+        set arr = [VariableDeclaration21];
+        set arr += [VariableDeclaration21];
+        set arr w/= 0 <- VariableDeclaration21;
+        set arr w/= 0 .. 1 <- [VariableDeclaration21, VariableDeclaration17<Double>];
+        let foo = arr w/ 0 <- VariableDeclaration21;
+        return VariableDeclaration21(cnt, arg);
+    }
+
+    operation VariableDeclaration22() : Unit {
+        use q = Qubit();
+    }
+
+    operation VariableDeclaration23() : Unit {
+        use q = Qubit();
+        Operation(q);
+    }
+
+    operation VariableDeclaration24() : Unit {
+        use q = Qubit();
+        Operation(foo);
+    }
+
+    operation VariableDeclaration25() : Result {
+        use q = Qubit();
+        Operation(q);
+        return M(q);
+    }
+
+    operation VariableDeclaration26() : Result {
+        if (true) {
+            use q = Qubit();
+            Operation(q);
+            return M(q);
+        } else {
+            return Zero;
+        }
+    }
+
+    operation VariableDeclaration27() : Bool {
+        use q = Qubit();
+        Operation(q);
+        if M(q) == One {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    operation VariableDeclaration28() : Unit {
+        use q = Qubit()
+    }
+
+    operation VariableDeclaration29() : Unit {
+        if (true) {
+            use q = Qubit();
+            Operation(q);
+        }
+        Operation(q);
+    }
+
+    operation VariableDeclaration30() : Result {
+        borrow q = Qubit();
+        Operation(q);
+        return M(q);
+    }
+
+    operation VariableDeclaration31() : Unit {
+        borrow q = Qubit()
+    }
+
+    operation VariableDeclaration32() : Unit {
+        if (true) {
+            borrow q = Qubit();
+            Operation(q);
+        }
+        Operation(q);
+    }
 
 
     // copy-and-update array
@@ -19,7 +442,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     }
 
     function CopyAndUpdateArray3 (arr : Int[][]) : Int[][] {
-        return arr w/ 0 <- new Int[10];
+        return arr w/ 0 <- [0, size = 10];
     }
 
     function CopyAndUpdateArray4<'T> (arr : 'T[]) : 'T[] {
@@ -43,7 +466,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     }
 
     function CopyAndUpdateArray9 (arr : Int[]) : Int[] {
-        return arr 
+        return arr
             w/ 0 <- 1
             w/ 1 <- 2;
     }
@@ -57,45 +480,45 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     }
 
     function CopyAndUpdateArray12<'T> (
-        arr : ('T => Unit)[], 
-        op1 : ('T => Unit), 
-        op2 : ('T => Unit)) 
+        arr : ('T => Unit)[],
+        op1 : ('T => Unit),
+        op2 : ('T => Unit))
     : ('T => Unit)[] {
-        return arr 
+        return arr
             w/ 0 <- op1
             w/ 1 <- op2;
     }
 
     function CopyAndUpdateArray13<'T> (
-        arr : ('T => Unit)[], 
-        op1 : ('T => Unit is Ctl), 
-        op2 : ('T => Unit is Adj)) 
+        arr : ('T => Unit)[],
+        op1 : ('T => Unit is Ctl),
+        op2 : ('T => Unit is Adj))
     : ('T => Unit)[] {
-        return arr 
+        return arr
             w/ 0 <- op1
             w/ 1 <- op2;
     }
 
     function CopyAndUpdateArray14<'T> (
-        arr : ('T => Unit is Adj)[], 
-        op1 : ('T => Unit is Ctl + Adj), 
-        op2 : ('T => Unit is Adj)) 
+        arr : ('T => Unit is Adj)[],
+        op1 : ('T => Unit is Ctl + Adj),
+        op2 : ('T => Unit is Adj))
     : ('T => Unit is Adj)[] {
-        return arr 
+        return arr
             w/ 0 <- op1
             w/ 1 <- op2;
     }
 
     function CopyAndUpdateArray15<'T> (
-        arr : ('T => Unit is Adj)[], 
-        op : ('T => Unit is Ctl)) 
+        arr : ('T => Unit is Adj)[],
+        op : ('T => Unit is Ctl))
     : ('T => Unit is Adj)[] {
         return arr w/ 0 <- op;
     }
 
     function CopyAndUpdateArray16<'T> (
-        arr : ('T => Unit is Adj)[], 
-        op : (Int => Unit is Adj)) 
+        arr : ('T => Unit is Adj)[],
+        op : (Int => Unit is Adj))
     : ('T => Unit is Adj)[] {
         return arr w/ 0 <- op;
     }
@@ -104,27 +527,27 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     // update-and-reassign array
 
     function UpdateAndReassign1 () : Unit {
-        mutable arr = new Int[10];
+        mutable arr = [0, size = 10];
         set arr w/= 1 <- 0;
     }
 
     function UpdateAndReassign2 () : Unit {
-        mutable arr = new Int[10];
+        mutable arr = [0, size = 10];
         set arr w/= 0 .. 2 <- [0,0,0];
     }
 
     function UpdateAndReassign3 () : Unit {
-        mutable arr = new Int[10];
+        mutable arr = [0, size = 10];
         set arr w/= 0 .. Length(arr)-1 <- arr w/ 0 <- 1;
     }
 
     function UpdateAndReassign4 () : Unit {
-        mutable arr = new Int[10];
+        mutable arr = [0, size = 10];
         set arr w/= 1 <- 0.;
     }
 
     function UpdateAndReassign5 () : Unit {
-        mutable arr = new Int[10];
+        mutable arr = [0, size = 10];
         set arr w/= 0 .. Length(arr) <- 1 .. Length(arr);
     }
 
@@ -139,11 +562,11 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     }
 
     function UpdateAndReassign8<'T> (
-        op1 : ('T => Unit is Ctl), 
-        op2 : ('T => Unit is Adj)) 
+        op1 : ('T => Unit is Ctl),
+        op2 : ('T => Unit is Adj))
     : Unit {
         mutable arr = new ('T => Unit)[10];
-        set arr w/= 0 .. Length(arr) <- 
+        set arr w/= 0 .. Length(arr) <-
             arr w/ 0 <- op1 w/ 1 <- op2;
     }
 
@@ -161,8 +584,8 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     // apply-and-reassign statements
 
     function ApplyAndReassign1 () : Unit {
-        mutable i = 0; 
-        set i += 1; 
+        mutable i = 0;
+        set i += 1;
         set i -= 1;
         set i *= 10;
         set i /= 2;
@@ -171,13 +594,13 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     }
 
     function ApplyAndReassign2 () : Unit {
-        mutable i = true; 
+        mutable i = true;
         set i and= false;
         set i or= true;
     }
 
     function ApplyAndReassign3 () : Unit {
-        mutable i = 23; 
+        mutable i = 23;
         set i &&&= 2^10 - 1;
         set i |||= 1;
         set i ^^^= 2^10 - 1;
@@ -186,38 +609,42 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     }
 
     function ApplyAndReassign4 () : Unit {
-        mutable i = 1L; 
+        mutable i = 1L;
         set i ^= 2;
     }
 
     function ApplyAndReassign5 () : Unit {
-        mutable i = 1L; 
+        mutable i = 1L;
         set i += 2L ^ 2;
     }
 
     function ApplyAndReassign6 () : Unit {
-        mutable i = true; 
+        mutable i = true;
         set i and= 1;
     }
 
     function ApplyAndReassign7 () : Unit {
-        mutable i = 1; 
+        mutable i = 1;
         set i += 1.;
     }
 
     function ApplyAndReassign8 () : Unit {
-        let i = 1; 
+        let i = 1;
         set i += 1;
     }
 
     function ApplyAndReassign9 () : Unit {
-        mutable a = new Int[10]; 
+        mutable a = [0, size = 10];
         set a[0] = 1;
     }
 
     function ApplyAndReassign10 () : Unit {
-        mutable a = new Int[10]; 
+        mutable a = [0, size = 10];
         set a[0] += 1;
+    }
+
+    function ApplyAndReassign11 () : Unit {
+        set bool = true;
     }
 
 
@@ -264,8 +691,8 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
             fail "length mismatch";
         }
 
-        mutable res = new (Int,Int,Int)[0];
-        for ((i1, i2) in arg2::Name) {
+        mutable res = [];
+        for (i1, i2) in arg2::Name {
             set res += [(i1, i2, arg1::Name[Length(res)])];
         }
         return res;
@@ -273,7 +700,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
 
     function ItemAccess8 (arg : ArrayType8) : (Double, Double)[] {
         mutable ((_, res), i) = (arg!, 0);
-        for ((fst, snd) in res) {
+        for (fst, snd) in res {
             set res w/= i <- (fst + arg :: Const, snd);
             set i += 1;
         }
@@ -282,7 +709,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
 
     function ItemAccess9 (arg : ArrayType9) : (Int, Int)[] {
         mutable ((res, _), i) = (arg!, 0);
-        for ((fst, snd) in res) {
+        for (fst, snd) in res {
             set res w/= i <- (fst + arg :: Phase, snd);
             set i += 1;
         }
@@ -308,7 +735,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
         arg::Op1 ();
         arg :: Op2();
     }
-        
+
     operation ItemAccess14 (arg : AdjWithArg) : Unit
     is Adj {
         arg::A1 (arg::a2, arg::a1);
@@ -318,7 +745,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
         return arg::A1;
     }
 
-    operation ItemAccess16 (arg : UnitaryWithArg) : Unit 
+    operation ItemAccess16 (arg : UnitaryWithArg) : Unit
     is Adj + Ctl {
         arg::U1 (arg::param);
     }
@@ -356,7 +783,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     }
 
     function ItemUpdate4 (arg : NamedItems6) : Unit {
-        mutable foo = arg 
+        mutable foo = arg
             w/ Phase <- 1
             w/ Const <- 1.;
         set foo w/= Const <- 10.;
@@ -367,13 +794,13 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     }
 
     function ItemUpdate6 (arg : NamedItems6) : Unit {
-        mutable foo = arg 
+        mutable foo = arg
             w/ Phase <- 1.
             w/ Const <- 1.;
     }
 
     function ItemUpdate7 (arg : NamedItems6) : Unit {
-        mutable foo = arg 
+        mutable foo = arg
             w/ Phase <- 1
             w/ Const <- "";
     }
@@ -386,31 +813,31 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
 
     function ItemUpdate9 () : Unit {
         mutable arr = new ArrayType10[5];
-        for (i in 0..4) {
-            mutable item = arr[i] w/ Phase <- new Int[10];
-            set item w/= Const <- new Double[10];
+        for i in 0..4 {
+            mutable item = arr[i] w/ Phase <- [0, size = 10];
+            set item w/= Const <- [0.0, size = 10];
             set arr w/= i <- item;
         }
     }
 
     function ItemUpdate10 () : Unit {
         mutable arr = new ArrayType10[5];
-        for (i in 0..4) {
-            mutable item = arr[i] w/ Phase <- new Int[10];
+        for i in 0..4 {
+            mutable item = arr[i] w/ Phase <- [0, size = 10];
             set item::Phase w/= 0 <- 1;
         }
     }
 
     function ItemUpdate11 () : Unit {
         mutable arr = new ArrayType10[5];
-        for (i in 0..4) {
-            set arr[i] w/= Phase <- new Int[10];
+        for i in 0..4 {
+            set arr[i] w/= Phase <- [0, size = 10];
         }
     }
 
     function ItemUpdate12 () : Unit {
         mutable arr = new ArrayType10[5];
-        for (i in 0..4) {
+        for i in 0..4 {
             mutable item = arr[i] w/ Phase <- 1;
             set item w/= Const <- 10.;
             set arr w/= i <- item;
@@ -419,20 +846,20 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
 
     operation ItemUpdate13 (
         op  : (Unit => Unit),
-        adj : (Unit => Unit is Adj), 
-        ctl : (Unit => Unit is Ctl)) 
+        adj : (Unit => Unit is Adj),
+        ctl : (Unit => Unit is Ctl))
     : Unit {
         mutable p1 = OpPair(adj, adj);
         set p1 w/= Op1 <- ctl;
         set p1 w/= Op1 <- op;
-        let p2 = OpPair(ctl, ctl) 
+        let p2 = OpPair(ctl, ctl)
             w/ Op1 <- op
             w/ Op2 <- adj;
     }
 
     operation ItemUpdate14 (
         unitary : (Int => Unit is Adj + Ctl),
-        ctl        : (Int => Unit is Ctl)) 
+        ctl        : (Int => Unit is Ctl))
     : Unit {
         mutable u1 = UnitaryWithArg(unitary, 0);
         set u1 w/= U1 <- ctl;
@@ -446,7 +873,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
             w/ U1 <- adj;
     }
 
-    operation ItemUpdate16 (unitary : (Unit => Unit is Adj + Ctl)) : Unit 
+    operation ItemUpdate16 (unitary : (Unit => Unit is Adj + Ctl)) : Unit
     is Adj + Ctl {
         let p = OpPair(unitary, unitary);
         p::Op1();
@@ -455,8 +882,8 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
 
     operation ItemUpdate17 (
         op        : (Unit => Unit),
-        unitary : (Unit => Unit is Adj + Ctl)) 
-    : Unit 
+        unitary : (Unit => Unit is Adj + Ctl))
+    : Unit
     is Adj + Ctl {
         mutable p = OpPair(op, op);
         set p w/= Op1 <- unitary;
@@ -465,8 +892,8 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
 
     operation ItemUpdate18 (
         op        : (Unit => Unit),
-        unitary : (Unit => Unit is Adj + Ctl)) 
-    : Unit 
+        unitary : (Unit => Unit is Adj + Ctl))
+    : Unit
     is Adj + Ctl {
         let p = OpPair(op, op) w/ Op1 <- unitary;
         p::Op1();
@@ -474,15 +901,15 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
 
     operation ItemUpdate19 (
         op        : (Unit => Unit),
-        unitary : (Unit => Unit is Adj + Ctl)) 
-    : Unit 
+        unitary : (Unit => Unit is Adj + Ctl))
+    : Unit
     is Adj + Ctl {
         (OpPair(op, op) w/ Op1 <- unitary)::Op1();
     }
 
     operation ItemUpdate20 (
         op        : (Unit => Unit),
-        unitary : (Unit => Unit is Adj + Ctl)) 
+        unitary : (Unit => Unit is Adj + Ctl))
     : Unit {
         (OpPair(op, op) w/ Op1 <- unitary)::Op1();
     }
@@ -570,7 +997,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
         within {
             if (cond) {
                 fail "{foo}";
-            } 
+            }
         }
         apply {
             if (not cond) {
@@ -582,9 +1009,9 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     operation ValidConjugation8 (cond : Bool) : Unit {
         mutable foo = 1;
         within {
-            for (i in 1 .. 10) {
+            for i in 1 .. 10 {
                 GenericAdjointable(i, (i, foo));
-            } 
+            }
         }
         apply {
             repeat {}
@@ -597,7 +1024,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     operation InvalidConjugation1 () : Unit {
         mutable foo = 1;
         within {
-            GenericAdjointable(foo); 
+            GenericAdjointable(foo);
         }
         apply {
             set foo = 10;
@@ -607,7 +1034,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     operation InvalidConjugation2 () : Unit {
         mutable foo = 1;
         within {
-            GenericAdjointable($"{foo}"); 
+            GenericAdjointable($"{foo}");
         }
         apply {
             set foo = 10;
@@ -617,7 +1044,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     operation InvalidConjugation3 () : Unit {
         mutable foo = 1;
         within {
-            let _ = foo; 
+            let _ = foo;
         }
         apply {
             set foo = 10;
@@ -627,7 +1054,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     operation InvalidConjugation4 () : Unit {
         mutable foo = 1;
         within {
-            let _ = foo; 
+            let _ = foo;
         }
         apply {
             set (_, foo) = (1, 10);
@@ -637,7 +1064,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     operation InvalidConjugation5 () : Unit {
         mutable foo = 1;
         within {
-            if (foo + 1 > 0) {} 
+            if (foo + 1 > 0) {}
         }
         apply {
             set (_, foo) = (1, 10);
@@ -649,7 +1076,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
         within {
             if (cond) {
                 fail $"{foo}";
-            } 
+            }
         }
         apply {
             set (_, (foo, _)) = (1, (10, ""));
@@ -661,7 +1088,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
         within {
             if (cond) {
                 fail $"{foo}";
-            } 
+            }
         }
         apply {
             if (not cond) {
@@ -673,9 +1100,9 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     operation InvalidConjugation8 (cond : Bool) : Unit {
         mutable foo = 1;
         within {
-            for (i in 1 .. 10) {
+            for i in 1 .. 10 {
                 GenericAdjointable(i, (i, foo));
-            } 
+            }
         }
         apply {
             repeat {}
@@ -686,80 +1113,516 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
         }
     }
 
-    
+
     // open-ended ranges in array slicing expressions
 
     function ValidArraySlice1 (arr : Int[]) : Int[] {
-        return arr[3...];            
-    } 
+        return arr[3...];
+    }
 
     function ValidArraySlice2 (arr : Int[]) : Int[] {
-        return arr [0 .. 2 ... ];    
-    } 
+        return arr [0 .. 2 ... ];
+    }
 
     function ValidArraySlice3 (arr : Int[]) : Int[] {
-        return arr[...2];            
-    } 
+        return arr[...2];
+    }
 
     function ValidArraySlice4 (arr : Int[]) : Int[] {
-        return arr[...2..3];        
-    } 
+        return arr[...2..3];
+    }
 
     function ValidArraySlice5 (arr : Int[]) : Int[] {
-        return arr[...2...];        
-    } 
+        return arr[...2...];
+    }
 
     function ValidArraySlice6 (arr : Int[]) : Int[] {
-        return arr[...];            
-    } 
+        return arr[...];
+    }
 
     function ValidArraySlice7 (arr : Int[]) : Int[] {
         return arr [4 .. -2 ... ];
-    } 
+    }
 
     function ValidArraySlice8 (arr : Int[]) : Int[] {
-        return arr[ ... -1 .. 3];    
-    } 
+        return arr[ ... -1 .. 3];
+    }
 
     function ValidArraySlice9 (arr : Int[]) : Int[] {
-        return arr[...-1...];        
-    } 
+        return arr[...-1...];
+    }
+
+    function ValidArraySlice10 (arr : Int[]) : Int[] {
+        return arr[...arr[0]...];
+    }
+
+    function ValidArraySlice11 (arr : Int[]) : Int[] {
+        return arr[arr[1]..arr[0]...];
+    }
+
+    function ValidArraySlice12 (arr : Int[]) : Int[] {
+        return arr[...arr[0]..arr[2]];
+    }
+
+    function ValidArraySlice13 (arr : Int[]) : Int[] {
+        return arr[arr[1]..arr[0]..arr[2]];
+    }
 
 
     function InvalidArraySlice1 (arr : BigEndian) : Int[] {
-        return arr[3...];            
-    } 
+        return arr[3...];
+    }
 
     function InvalidArraySlice2 (arr : BigEndian) : Int[] {
-        return arr [0 .. 2 ... ];    
-    } 
+        return arr [0 .. 2 ... ];
+    }
 
     function InvalidArraySlice3 (arr : BigEndian) : Int[] {
-        return arr[...2];            
-    } 
+        return arr[...2];
+    }
 
     function InvalidArraySlice4 (arr : BigEndian) : Int[] {
-        return arr[...2..3];        
-    } 
+        return arr[...2..3];
+    }
 
     function InvalidArraySlice5 (arr : BigEndian) : Int[] {
-        return arr[...2...];        
-    } 
+        return arr[...2...];
+    }
 
     function InvalidArraySlice6 (arr : BigEndian) : Int[] {
-        return arr[...];            
-    } 
+        return arr[...];
+    }
 
     function InvalidArraySlice7 (arr : BigEndian) : Int[] {
         return arr [4 .. -2 ... ];
-    } 
+    }
 
     function InvalidArraySlice8 (arr : BigEndian) : Int[] {
-        return arr[ ... -1 .. 3];    
-    } 
+        return arr[ ... -1 .. 3];
+    }
 
     function InvalidArraySlice9 (arr : BigEndian) : Int[] {
-        return arr[...-1...];        
-    } 
+        return arr[...-1...];
+    }
 
+
+    // deprecation warnings
+
+    @Attribute()
+    @Deprecated("")
+    newtype DeprecatedAttribute = Unit;
+
+    @Attribute()
+    @Deprecated("OldAttribute")
+    newtype RenamedAttribute = Unit;
+
+    @Deprecated("")
+    newtype DeprecatedType = Unit;
+
+    @Deprecated("NewTypeName")
+    newtype RenamedType = Unit;
+
+    @Deprecated("")
+    function DeprecatedCallable() : Unit {}
+
+    @Deprecated("NewCallableName")
+    function RenamedCallable() : Unit {}
+
+    @Deprecated("")
+    @Deprecated("")
+    function DuplicateDeprecateAttribute1() : Unit {}
+
+    @Deprecated("")
+    @Deprecated("NewName") // will be ignored
+    function DuplicateDeprecateAttribute2() : Unit {}
+
+
+    newtype DeprecatedItemType1 = (Unit -> DeprecatedType)[];
+
+    @Attribute()
+    newtype DeprecatedItemType2 = DeprecatedType;
+
+    newtype RenamedItemType1 = (Int, RenamedType);
+
+    @Attribute()
+    newtype RenamedItemType2 = RenamedType;
+
+
+    function DeprecatedTypeConstructor () : Unit {
+        let _ = DeprecatedType();
+    }
+
+    function RenamedTypeConstructor () : Unit {
+        let _ = RenamedType();
+    }
+
+    function UsingDeprecatedCallable () : Unit {
+        DeprecatedCallable();
+    }
+
+    @Deprecated("nested")
+    function NestedDeprecatedCallable() : Unit {
+        DeprecatedCallable();
+    }
+
+    function UsingNestedDeprecatedCallable() : Unit {
+        NestedDeprecatedCallable();
+    }
+
+    function UsingRenamedCallable () : Unit {
+        RenamedCallable();
+    }
+
+
+    @DeprecatedAttribute()
+    function UsingDeprecatedAttribute1 () : Unit {}
+
+    @DeprecatedAttribute()
+    operation UsingDeprecatedAttribute2 () : Unit {}
+
+    @DeprecatedAttribute()
+    newtype UsingDeprecatedAttribute3 = Unit;
+
+    @Deprecated("")
+    function DeprecatedAttributeInDeprecatedCallable() : Unit {
+        UsingDeprecatedAttribute1();
+    }
+
+    function UsingDepAttrInDepCall() : Unit {
+        DeprecatedAttributeInDeprecatedCallable();
+    }
+
+    @Deprecated("")
+    function DeprecatedTypeInDeprecatedCallable() : Unit {
+        let _ = DeprecatedType();
+    }
+
+    function UsingDepTypeInDepCall() : Unit {
+        DeprecatedTypeInDeprecatedCallable();
+    }
+
+    @RenamedAttribute()
+    function UsingRenamedAttribute1 () : Unit {}
+
+    @RenamedAttribute()
+    operation UsingRenamedAttribute2 () : Unit {}
+
+    @RenamedAttribute()
+    newtype UsingRenamedAttribute3 = Unit;
+
+
+    function UsingDeprecatedType1 () : Unit {
+        let _ = new DeprecatedType[0];
+    }
+
+    function UsingDeprecatedType2 (arg : DeprecatedType) : Unit {}
+
+    function UsingDeprecatedType3 (arg : (DeprecatedType -> Unit)) : Unit {}
+
+    function UsingDeprecatedType4 () : DeprecatedType {
+        return Default<DeprecatedType>();
+    }
+
+    function UsingDeprecatedType5 () : (DeprecatedType[], Int) {
+        return Default<(DeprecatedType[], Int)>();
+    }
+
+
+    function UsingRenamedType1 () : Unit {
+        let _ = new RenamedType[0];
+    }
+
+    function UsingRenamedType2 (arg : RenamedType) : Unit {}
+
+    function UsingRenamedType3 (arg : (RenamedType -> Unit)) : Unit {}
+
+    function UsingRenamedType4 () : RenamedType {
+        return Default<RenamedType>();
+    }
+
+    function UsingRenamedType5 () : (RenamedType[], Int) {
+        return Default<(RenamedType[], Int)>();
+    }
+
+
+    // unit tests
+
+    @Test("QuantumSimulator")
+    function ValidTestAttribute1 () : Unit {}
+
+    @Test("ResourcesEstimator")
+    function ValidTestAttribute2 () : Unit {}
+
+    @Test("ToffoliSimulator")
+    function ValidTestAttribute3 () : Unit {}
+
+    @Test("QuantumSimulator")
+    operation ValidTestAttribute4 () : Unit {}
+
+    @Test("ResourcesEstimator")
+    operation ValidTestAttribute5 () : Unit {}
+
+    @Test("ToffoliSimulator")
+    operation ValidTestAttribute6 () : Unit {}
+
+    @Test("QuantumSimulator")
+    operation ValidTestAttribute7 () : Unit
+    is Adj + Ctl{}
+
+    @Test("ResourcesEstimator")
+    operation ValidTestAttribute8 () : Unit
+    is Adj {}
+
+    @Test("ToffoliSimulator")
+    operation ValidTestAttribute9 () : Unit
+    is Ctl {}
+
+    @Test("QuantumSimulator")
+    function ValidTestAttribute10 () : ((Unit)) {}
+
+    @Test("ResourcesEstimator")
+    function ValidTestAttribute11 (arg : Unit) : Unit { }
+
+    @Test("ToffoliSimulator")
+    operation ValidTestAttribute12 (arg : (Unit)) : Unit { }
+
+    @Test("QuantumSimulator")
+    @Test("ToffoliSimulator")
+    @Test("ResourcesEstimator")
+    @Test("SparseSimulator")
+    function ValidTestAttribute13 () : Unit { }
+
+    @Test("QuantumSimulator")
+    @Test("ToffoliSimulator")
+    @Test("ResourcesEstimator")
+    @Test("SparseSimulator")
+    operation ValidTestAttribute14 () : Unit { }
+
+    @Test("QuantumSimulator")
+    @Test("QuantumSimulator")
+    operation ValidTestAttribute15 () : Unit { }
+
+    @Test("QuantumSimulator")
+    operation ValidTestAttribute16 () : { }
+
+    @Test("SomeNamespace.Target")
+    operation ValidTestAttribute17 () : Unit { }
+
+    @Test("SomeNamespace.Target1")
+    @Test("_Some3_Namespace_._My45.Target2")
+    function ValidTestAttribute18 () : Unit { }
+
+    @Test("SomeNamespace.Target")
+    @Test("SomeNamespace.Target")
+    function ValidTestAttribute19 () : Unit { }
+
+    @Test("SomeNamespace.Target")
+    @Test("QuantumSimulator")
+    operation ValidTestAttribute20 () : Unit { }
+
+    @Test("SparseSimulator")
+    function ValidTestAttribute21 () : Unit {}
+
+    @Test("SparseSimulator")
+    operation ValidTestAttribute22 () : Unit {}
+
+    @Test("SparseSimulator")
+    operation ValidTestAttribute23 () : Unit
+    is Adj + Ctl{}
+
+    @Test("SparseSimulator")
+    @Test("SparseSimulator")
+    function ValidTestAttribute24 () : Unit {}
+
+    @Test("QuantumSimulator")
+    newtype InvalidTestAttribute1 = Unit;
+
+    function InvalidTestAttribute2 () : Unit {
+        @Test("ToffoliSimulator")
+        body (...) {}
+    }
+
+    operation InvalidTestAttribute3 () : Unit {
+        @Test("ResourcesEstimator")
+        body (...) {}
+    }
+
+    operation InvalidTestAttribute4 () : Unit {
+        body (...) { }
+        @Test("ResourcesEstimator")
+        adjoint (...) { }
+    }
+
+    @Test("ResourcesEstimator")
+    function InvalidTestAttribute5<'T> () : Unit { }
+
+    @Test("QuantumSimulator")
+    operation InvalidTestAttribute6<'T> () : Unit { }
+
+    @Test("SparseSimulator")
+    operation InvalidTestAttribute7 () : Int {
+        return 1;
+    }
+
+    @Test("ToffoliSimulator")
+    function InvalidTestAttribute8 () : String {
+        return "";
+    }
+
+    @Test("QuantumSimulator")
+    function InvalidTestAttribute9 (a : Unit, b : Unit) : Unit { }
+
+    @Test("ResourcesEstimator")
+    operation InvalidTestAttribute10 (a : Bool) : Unit { }
+
+    @Test("SparseSimulator")
+    operation InvalidTestAttribute11 ((a : Double)) : Unit { }
+
+    @Test("")
+    operation InvalidTestAttribute12 () : Unit { }
+
+    @Test("  ")
+    function InvalidTestAttribute13 () : Unit { }
+
+    @Test("Target")
+    function InvalidTestAttribute14 () : Unit { }
+
+    @Test("Target")
+    @Test("ToffoliSimulator")
+    @Test("ToffoliSimulator")
+    operation InvalidTestAttribute15 () : Unit { }
+
+    @Test("QuantumSimulator")
+    operation InvalidTestAttribute16 () : NonExistent { }
+
+    @Test ()
+    operation InvalidTestAttribute17 () : Unit { }
+
+    @Test
+    operation InvalidTestAttribute18 () : Unit { }
+
+    @Test("SomeNamespace.")
+    operation InvalidTestAttribute19 () : Unit { }
+
+    @Test("NS.3Qubit")
+    operation InvalidTestAttribute20 () : Unit { }
+
+    @Test("SomeNamespace .Target")
+    function InvalidTestAttribute21 () : Unit { }
+
+    @Test("Some Namespace.Target")
+    function InvalidTestAttribute22 () : Unit { }
+
+
+    // Parentheses in statements
+
+    function ParensIf() : Unit {
+        if (1 != 2) { }
+    }
+
+    function NoParensIf() : Unit {
+        if 1 != 2 { }
+    }
+
+    function ParensElif() : Unit {
+        if (2 == 2) {
+        } elif (1 != 2) {
+        }
+    }
+
+    function NoParensElif() : Unit {
+        if 2 == 2 {
+        } elif 1 != 2 {
+        }
+    }
+
+    function ParensFor() : Unit {
+        for (x in [1, 2, 3]) { }
+    }
+
+    function NoParensFor() : Unit {
+        for x in [1, 2, 3] { }
+    }
+
+    function ParensWhile() : Unit {
+        while (1 == 2) { }
+    }
+
+    function NoParensWhile() : Unit {
+        while 1 == 2 { }
+    }
+
+    operation ParensUntil() : Unit {
+        repeat {
+        } until (1 != 2);
+    }
+
+    operation NoParensUntil() : Unit {
+        repeat {
+        } until 1 != 2;
+    }
+
+    operation ParensUntilFixup() : Unit {
+        repeat {
+        } until (1 != 2) fixup {
+        }
+    }
+
+    operation NoParensUntilFixup() : Unit {
+        repeat {
+        } until 1 != 2 fixup {
+        }
+    }
+
+    operation ParensUse() : Unit {
+        use (q = Qubit()) { }
+    }
+
+    operation NoParensUse() : Unit {
+        use q = Qubit() { }
+    }
+
+    operation ParensBorrow() : Unit {
+        borrow (q = Qubit()) { }
+    }
+
+    operation NoParensBorrow() : Unit {
+        borrow q = Qubit() { }
+    }
+
+    // Deprecated qubit allocation keywords
+
+    operation DeprecatedUsingKeyword() : Unit {
+        using q = Qubit() { }
+    }
+
+    operation DeprecatedUsingKeywordParens() : Unit {
+        using (q = Qubit()) { }
+    }
+
+    operation DeprecatedBorrowingKeyword() : Unit {
+        borrowing q = Qubit() { }
+    }
+
+    operation DeprecatedBorrowingKeywordParens() : Unit {
+        borrowing (q = Qubit()) { }
+    }
+
+    // Expression statements
+
+    operation ExpressionStatements1(q : Qubit) : Unit {
+        Operation(q);
+    }
+
+    operation ExpressionStatements2(q : Qubit) : Unit {
+        M(q);
+    }
+
+    operation ExpressionStatements3(q : Qubit) : Unit {
+        let _ = M(q);
+    }
+
+    operation ExpressionStatements4(q : Qubit) : Unit {
+        GenericFunction(M(q));
+    }
 }

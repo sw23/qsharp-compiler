@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.Quantum.Sdk/#NUGET_VERSION#">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+</Project>

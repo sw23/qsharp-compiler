@@ -1,106 +1,264 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using CommandLine;
 using CommandLine.Text;
 using Microsoft.Quantum.QsCompiler.Diagnostics;
 
-
 namespace Microsoft.Quantum.QsCompiler.CommandLineCompiler
 {
     public static class BuildCompilation
     {
         [Verb("build", HelpText = "Builds a compilation unit to run on the Q# quantum simulation framework.")]
-        public class BuildOptions : Options
+        public class BuildOptions : CompilationOptions
         {
+            // TODO: Disabling nullable annotations is a workaround for
+            // https://github.com/commandlineparser/commandline/issues/136.
+#nullable disable annotations
+
             [Usage(ApplicationAlias = "qsCompiler")]
             public static IEnumerable<Example> UsageExamples
             {
                 get
                 {
-                    yield return new Example("***\nCompiling a Q# source file",
+                    yield return new Example(
+                        "***\nCompiling a Q# source file",
                         new BuildOptions { Input = new string[] { "file.qs" } });
-                    yield return new Example("***\nCompiling a Q# source file and calling the C# generation on the compiled binary",
-                        new BuildOptions { Input = new string[] { "file.qs" }, Targets = new string[] { "path/To/Microsoft.Quantum.CsharpGeneration.dll" } });
-                    yield return new Example("***\nCompiling several Q# source files and referenced compiled libraries",
-                        new BuildOptions { Input = new string[] { "file1.qs", "file2.qs" }, References = new string[] { "library1.dll", "library2.dll" }});
-                    yield return new Example("***\nSetting the output folder for the compilation output",
+                    yield return new Example(
+                        "***\nCompiling a Q# source file using additional compilation steps defined in a .NET Core dll",
+                        new BuildOptions { Input = new string[] { "file.qs" }, Plugins = new string[] { "myCustomStep.dll" } });
+                    yield return new Example(
+                        "***\nCompiling several Q# source files and referenced compiled libraries",
+                        new BuildOptions { Input = new string[] { "file1.qs", "file2.qs" }, References = new string[] { "library1.dll", "library2.dll" } });
+                    yield return new Example(
+                        "***\nSetting the output folder for the compilation output",
                         new BuildOptions { Input = new string[] { "file.qs" }, References = new string[] { "library.dll" }, OutputFolder = Path.Combine("obj", "qsharp") });
                 }
             }
 
-            [Option('t', "target", Required = false, SetName = CODE_MODE,
-            HelpText = "Path to the dotnet core app(s) to call for processing the compiled binary.")]
-            public IEnumerable<string> Targets { get; set; }
+            [Option(
+                "response-files",
+                Required = true,
+                SetName = Options.ResponseFiles,
+                HelpText = "Response file(s) providing command arguments. Required only if no other arguments are specified. Non-default values for options specified via command line take precedence.")]
+            public new IEnumerable<string> ResponseFiles { get; set; }
 
-            [Option('o', "output", Required = false, SetName = CODE_MODE,
-            HelpText = "Destination folder where the output of the compilation will be generated.")]
+            [Option(
+                'o',
+                "output",
+                Required = false,
+                SetName = CodeMode,
+                HelpText = "Destination folder where the output of the compilation will be generated.")]
             public string OutputFolder { get; set; }
 
-            [Option("doc", Required = false, SetName = CODE_MODE,
-            HelpText = "Destination folder where documentation will be generated.")]
-            public string DocFolder { get; set; }
-
-            [Option("proj", Required = false, SetName = CODE_MODE,
-            HelpText = "Name of the project; needs to be usable as file name.")]
+            [Option(
+                "proj",
+                Required = false,
+                SetName = CodeMode,
+                HelpText = "Name of the project (needs to be usable as file name).")]
             public string ProjectName { get; set; }
+
+            [Option(
+                "emit-dll",
+                Required = false,
+                Default = false,
+                SetName = CodeMode,
+                HelpText = "Specifies whether the compiler should emit a .NET Core dll containing the compiled Q# code.")]
+            public bool EmitDll { get; set; }
+
+            [Option(
+                "perf",
+                Required = false,
+                SetName = CodeMode,
+                HelpText = "Destination folder where the output of the performance assessment will be generated.")]
+            public string PerfOutputFolder { get; set; }
+
+#nullable restore annotations
+
+            /// <summary>
+            /// Reads the content of all specified response files and processes it using FromResponseFiles.
+            /// Updates the settings accordingly, prioritizing already specified non-default values over the values from response-files.
+            /// Returns true and a new BuildOptions object as out parameter with all the settings from response files incorporated.
+            /// Returns false if the content of the specified response-files could not be processed.
+            /// </summary>
+            internal static bool IncorporateResponseFiles(
+                BuildOptions options, [NotNullWhen(true)] out BuildOptions? incorporated, ILogger? logger = null)
+            {
+                incorporated = null;
+                var responseFiles = options.ResponseFiles;
+                while (options.ResponseFiles != null && options.ResponseFiles.Any())
+                {
+                    try
+                    {
+                        var fromResponseFiles = FromResponseFiles(options.ResponseFiles);
+                        if (fromResponseFiles == null)
+                        {
+                            return false;
+                        }
+
+                        fromResponseFiles.UpdateSetIndependentSettings(options);
+                        options = fromResponseFiles;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger?.Log(ex);
+                        return false;
+                    }
+                }
+
+                incorporated = options;
+                incorporated.ResponseFiles = responseFiles;
+                return true;
+            }
         }
 
+        /// <summary>
+        /// Given a string representing the command line arguments, splits them into a suitable string array.
+        /// </summary>
+        private static IEnumerable<string> SplitCommandLineArguments(string commandLine)
+        {
+            string TrimQuotes(string s) =>
+                s.StartsWith('"') && s.EndsWith('"')
+                ? s.Substring(1, s.Length - 2)
+                : s;
 
-        // publicly accessible routines 
+            var parmChars = commandLine?.ToCharArray() ?? Array.Empty<char>();
+            var inQuote = false;
+
+            for (int index = 0; index < parmChars.Length; index++)
+            {
+                var precededByBackslash = index > 0 && parmChars[index - 1] == '\\';
+                var ignoreIfQuote = inQuote && precededByBackslash;
+                if (parmChars[index] == '"' && !ignoreIfQuote)
+                {
+                    inQuote = !inQuote;
+                }
+
+                if (inQuote && parmChars[index] == '\n')
+                {
+                    parmChars[index] = ' ';
+                }
+
+                if (!inQuote && !precededByBackslash && char.IsWhiteSpace(parmChars[index]))
+                {
+                    parmChars[index] = '\n';
+                }
+            }
+
+            return new string(parmChars)
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(arg => TrimQuotes(arg));
+        }
+
+        /// <summary>
+        /// Reads the content off all given response files and tries to parse their concatenated content as command line arguments.
+        /// Logs a suitable exceptions and returns null if the parsing fails.
+        /// </summary>
+        private static BuildOptions? FromResponseFiles(IEnumerable<string> responseFiles)
+        {
+            var commandLine = string.Join(" ", responseFiles.Select(File.ReadAllText));
+            var args = SplitCommandLineArguments(commandLine);
+            var parsed = Parser.Default.ParseArguments<BuildOptions>(args);
+            return parsed.MapResult(
+                opts => opts,
+                errs =>
+                {
+                    HelpText.AutoBuild(parsed);
+                    return null as BuildOptions;
+                });
+        }
+
+        /// <summary>
+        /// Publishes performance tracking data.
+        /// Logs errors if something went wrong while tracking performance or publishing results.
+        /// </summary>
+        private static void PublishPerformanceTrackingData(string perfFolder, ConsoleLogger logger)
+        {
+            if (PerformanceTracking.FailureOccurred)
+            {
+                var ex = PerformanceTracking.FailureException ?? new InvalidOperationException($"Performance tracking failed to publish.");
+                logger.Log(ErrorCode.PerformanceTrackingFailed, new string[] { ex.Message });
+                logger.Log(ex);
+                return;
+            }
+
+            try
+            {
+                CompilationTracker.PublishResults(perfFolder);
+            }
+            catch (Exception ex)
+            {
+                logger.Log(ErrorCode.PublishingPerfResultsFailed, new string[] { perfFolder });
+                logger.Log(ex);
+            }
+        }
+
+        // publicly accessible routines
 
         /// <summary>
         /// Builds the compilation for the Q# code or Q# snippet and referenced assemblies defined by the given options.
-        /// Invokes all specified targets (dotnet core apps) with suitable TargetOptions,
-        /// that in particular specify the path to the compiled binary as input and the same output folder, verbosity, and suppressed warnings as the given options.
-        /// The output folder is set to the current directory if one or more targets have been specified but the output folder was left unspecified.
         /// Returns a suitable error code if one of the compilation or generation steps fails.
-        /// </summary>
-        /// <exception cref="System.ArgumentNullException">If any of the given arguments is null.</exception>
         /// </summary>
         public static int Run(BuildOptions options, ConsoleLogger logger)
         {
-            if (options == null) throw new ArgumentNullException(nameof(options));
-            if (logger == null) throw new ArgumentNullException(nameof(logger));
-
-            CompilationLoader.BuildTarget DefineTarget(string exeName) => (binary, onException) =>
+            if (!BuildOptions.IncorporateResponseFiles(options, out var incorporated))
             {
-                var targetOpts = new TargetOptions
-                {
-                    Input = new[] { binary },
-                    OutputFolder = Path.GetFullPath(options.OutputFolder ?? "."), // GetFullPath is needed for the output folder to be relative to the current folder!
-                    Verbose = options.Verbose,
-                    NoWarn = options.NoWarn,
-                };
-                var pathToExe = Path.GetFullPath(exeName);
-                var commandLineArgs = $"{pathToExe} {Parser.Default.FormatCommandLine(targetOpts)}";
-                var success = ProcessRunner.Run("dotnet", commandLineArgs, out var output, out var error, out var exitCode, out var ex, timeout: 30000);
+                options.Print(logger);
+                logger.Log(ErrorCode.InvalidCommandLineArgsInResponseFiles, Array.Empty<string>());
+                return ReturnCode.InvalidArguments;
+            }
 
-                if (ex != null) onException?.Invoke(ex);
-                if (exitCode != 0) logger.Log(WarningCode.TargetExitedAbnormally, new[] { exeName, exitCode.ToString() }, pathToExe); 
-                var (outStr, errStr) = (output.ToString(), error.ToString());
-                if (!String.IsNullOrWhiteSpace(outStr)) logger.Log(InformationCode.BuildTargetOutput, Enumerable.Empty<string>(), pathToExe, messageParam: outStr);
-                if (!String.IsNullOrWhiteSpace(errStr)) logger.Log(InformationCode.BuildTargetError, Enumerable.Empty<string>(), pathToExe, messageParam: errStr); 
-                return success;
-            };
+            options = incorporated;
+            options.Print(logger);
+            options.SetupLoadingContext();
 
-            var specifiesTargets = options.Targets != null && options.Targets.Any();
+            var usesPlugins = options.Plugins != null && options.Plugins.Any();
+            options.ParseAssemblyProperties(logger, out var assemblyConstants);
             var loadOptions = new CompilationLoader.Configuration
             {
-                ProjectFile = options.ProjectName == null ? null : new Uri(Path.GetFullPath(options.ProjectName)),
+                ProjectName = options.ProjectName,
+                AssemblyConstants = assemblyConstants,
+                ForceRewriteStepExecution = options.ForceRewriteStepExecution,
+                TargetPackageAssemblies = options.TargetSpecificDecompositions ?? Enumerable.Empty<string>(),
+                TargetCapability = options.TargetCapability,
+                WarningsAsErrors = options.WarningsAsErrors,
+                SkipMonomorphization = options.SkipMonomorphization,
+                LiftLambdaExpressions = true,
                 GenerateFunctorSupport = true,
-                SkipSyntaxTreeTrimming = false,
-                DocumentationOutputFolder = options.DocFolder,
-                BuildOutputFolder = options.OutputFolder ?? (specifiesTargets ? "." : null),
-                Targets = options.Targets.ToImmutableDictionary(id => id, DefineTarget)
-            }; 
+                SkipTargetSpecificCompilation = options.SkipTargetSpecificCompilation,
+                SkipSyntaxTreeTrimming = options.TrimLevel == 0,
+                SkipConjugationInlining = options.TrimLevel == 0,
+                AttemptFullPreEvaluation = options.TrimLevel > 2,
+                BuildOutputFolder = options.OutputFolder ?? (usesPlugins ? "." : null),
+                DllOutputPath = options.EmitDll ? " " : null, // set to e.g. an empty space to generate the dll in the same location as the .bson file
+                IsExecutable = options.MakeExecutable,
+                RewriteStepAssemblies = options.Plugins?.Select(step => (step, (string?)null)) ?? ImmutableArray<(string, string)>.Empty,
+                EnableAdditionalChecks = false, // todo: enable debug mode?
+                ExposeReferencesViaTestNames = options.ExposeReferencesViaTestNames,
+            };
 
-            var loaded = new CompilationLoader(options.LoadSourcesOrSnippet(logger), options.References, loadOptions, logger);
+            if (options.PerfOutputFolder != null)
+            {
+                CompilationTracker.ClearData();
+                PerformanceTracking.CompilationTaskEvent += CompilationTracker.OnCompilationTaskEvent;
+            }
+
+            var loaded = new CompilationLoader(
+                options.LoadSourcesOrSnippet(logger),
+                options.References ?? Enumerable.Empty<string>(),
+                loadOptions,
+                logger);
+            if (options.PerfOutputFolder != null)
+            {
+                PublishPerformanceTrackingData(options.PerfOutputFolder, logger);
+            }
+
             return ReturnCode.Status(loaded);
         }
     }

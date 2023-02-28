@@ -1,12 +1,33 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+
+/// Namespace used to test conflict with namespace name
+namespace Microsoft.Quantum.Testing.GlobalVerification.NamingConflict1 {
+    newtype Dummy = Unit;
+}
+
+/// Namespace used to test conflict with namespace name
+namespace Microsoft.Quantum.Testing.GlobalVerification.NamingConflict2 {
+    newtype Dummy = Unit;
+}
+
+/// Namespace used to test conflict with namespace name
+namespace Microsoft.Quantum.Testing.GlobalVerification.NamingConflict3 {
+    newtype Dummy = Unit;
+}
+
+
 /// This namespace contains test cases for syntax tree verification
 namespace Microsoft.Quantum.Testing.GlobalVerification {
 
+    open Microsoft.Quantum.Testing.Attributes;
     open Microsoft.Quantum.Testing.General;
     open Microsoft.Quantum.Testing.GlobalVerification.N3;
     open Microsoft.Quantum.Testing.GlobalVerification.N4 as N4;
+    open Microsoft.Quantum.Testing.GlobalVerification.N4 as N5;
+    open Microsoft.Quantum.Testing.GlobalVerification.N4 as N6;
+    open Microsoft.Quantum.Testing.GlobalVerification.N4 as N7;
 
 
     // types used to test cycle checking for user defined types across files
@@ -120,6 +141,19 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     function LocalNamespaceShortNames24 (arg1 : Udt1, arg2 : Udt2) : Unit {
         let _ = arg1! + arg2!;
     }
+
+    function LocalNamespaceShortNames25 () : (Unit -> N7.IntPair) {
+        return N5.Default<N6.IntPair>;
+    }
+
+    // naming conflicts with namespace name
+
+    function NamingConflict1 () : Unit {}
+    operation NamingConflict2 () : Unit {}
+    newtype NamingConflict3 = Unit;
+    function NamingConflict4 () : Unit {}
+    operation NamingConflict5 () : Unit {}
+    newtype NamingConflict6 = Unit;
 
 
     // checking for duplicate specializations
@@ -323,26 +357,26 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation AllPathsReturnValue8 () : Int {
-        using (q = Qubit()) {
+        use q = Qubit() {
             return 1; 
         }
     }
 
     operation AllPathsReturnValue9 () : Int {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             return 1; 
         }
     }
 
     operation AllPathsReturnValue10 () : Int {
-        using (q = Qubit()) {
+        use q = Qubit() {
             repeat { return 1; }
             until (true);
         }
     }
 
     operation AllPathsReturnValue11 () : Int {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             repeat { return 1; }
             until (true);
         }
@@ -350,13 +384,13 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
 
     operation AllPathsReturnValue12 (cond : Bool) : Int {
         if (cond) {
-            borrowing (q = Qubit()) {
+            borrow q = Qubit() {
                 repeat { return 1; }
                 until (true);
             }
         }
         else {
-            using (q = Qubit()) {
+            use q = Qubit() {
                 repeat { return 1; }
                 until (true)
                 fixup {}
@@ -425,19 +459,19 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation AllPathsFail8 () : Int {
-        using (q = Qubit()) {
+        use q = Qubit() {
             fail ""; 
         }
     }
 
     operation AllPathsFail9 () : Int {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             fail ""; 
         }
     }
 
     operation AllPathsFail10 () : Int {
-        using (q = Qubit()) {
+        use q = Qubit() {
             repeat { fail ""; }
             until (true)
             fixup {}
@@ -445,7 +479,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation AllPathsFail11 () : Int {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             repeat { fail ""; }
             until (true)
             fixup {}
@@ -454,13 +488,13 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
 
     operation AllPathsFail12 (cond : Bool) : Int {
         if (cond) {
-            borrowing (q = Qubit()) {
+            borrow q = Qubit() {
                 repeat { fail ""; }
                 until (true);
             }
         }
         else {
-            using (q = Qubit()) {
+            use q = Qubit() {
                 repeat { fail ""; }
                 until (true);
             }        
@@ -555,7 +589,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation NotAllPathsReturnValue11 () : Int {
-        using (q = Qubit()) {
+        use q = Qubit() {
             repeat {}
             until (true)
             fixup { return 1; }
@@ -563,7 +597,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
     
     operation NotAllPathsReturnValue12 () : Int {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             repeat {}
             until (true)
             fixup { return 1; }        
@@ -571,8 +605,8 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     function NotAllPathsReturnValue13 () : Int {
-        for (i in 1 .. 0) { // empty range
-            return 1;       // never executed
+        for i in 1 .. 0 { // empty range
+            return 1;     // never executed
         }
     }
 
@@ -654,7 +688,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation NotAllPathsReturnOrFail11 () : Int {
-        using (q = Qubit()) {
+        use q = Qubit() {
             repeat {}
             until (true)
             fixup { fail ""; }
@@ -662,7 +696,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation NotAllPathsReturnOrFail12 () : Int {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             repeat {}
             until (true)
             fixup { fail ""; }        
@@ -670,7 +704,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     function NotAllPathsReturnOrFail13 (range : Range) : Int {
-        for (i in range) {
+        for i in range {
             fail ""; 
         }
     }
@@ -685,20 +719,20 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     // valid uses of return within using
 
     operation ReturnFromWithinUsing1 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             return ();
         }
     }
 
     operation ReturnFromWithinUsing2 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             if (true) { return (); }  
             else {}
         }
     }
 
     operation ReturnFromWithinUsing3 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             if (true) {}
             elif (true) { return (); }  
             else {}
@@ -706,7 +740,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation ReturnFromWithinUsing4 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             if (true) {}
             elif (true) {}  
             else { return (); }
@@ -714,7 +748,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation ReturnFromWithinUsing5 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             if (true) { return (); }
             elif (true) { return (); }  
             else { return (); }
@@ -722,7 +756,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation ReturnFromWithinUsing6 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             repeat { return (); } 
             until(true) 
             fixup { DoNothing(); }
@@ -730,7 +764,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation ReturnFromWithinUsing7 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             repeat { 
                 DoNothing();
                 return (); 
@@ -743,8 +777,8 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation ReturnFromWithinUsing8 () : Unit {
-        using (q = Qubit()) {
-            for (i in 1..10) {
+        use q = Qubit() {
+            for i in 1..10 {
                 DoNothing();
                 return ();
             }
@@ -755,28 +789,28 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     // invalid uses of return within using
 
     operation InvalidReturnFromWithinUsing1 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             return ();
             DoNothing(); 
         }
     }
 
     operation InvalidReturnFromWithinUsing2 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             return ();
             fail "unreachable";  
         }
     }
 
     operation InvalidReturnFromWithinUsing3 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             return ();
             if (true) { return (); }  
         }
     }
 
     operation InvalidReturnFromWithinUsing4 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             return ();
             repeat {} 
             until(true) 
@@ -785,7 +819,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnFromWithinUsing5 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             repeat {} 
             until(false) 
             fixup { return (); }
@@ -793,35 +827,35 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnFromWithinUsing6 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             within { return(); }
             apply {}
         }
     }
 
     operation InvalidReturnFromWithinUsing7 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             within {}
             apply { return(); }
         }
     }
 
     operation InvalidReturnFromWithinUsing8 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             return ();
-            for (i in 1..10) {}
+            for i in 1..10 {}
         }
     }
 
     operation InvalidReturnFromWithinUsing9 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             if (true) { return (); }
             DoNothing();
         }
     }
 
     operation InvalidReturnFromWithinUsing10 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             if (true) { DoNothing(); }
             elif (true) { return (); }  
             elif (true) { return (); }  
@@ -831,7 +865,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnFromWithinUsing11 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             if (true) { DoNothing(); }
             elif (true) { DoNothing(); }  
             else { return (); }
@@ -840,7 +874,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnFromWithinUsing12 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             if (true) { return (); }
             elif (true) { return (); }  
             else { return (); }
@@ -849,7 +883,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnFromWithinUsing13 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             if (true)
             {
                 if (true) { DoNothing(); }
@@ -865,7 +899,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnFromWithinUsing14 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             if (true) { DoNothing(); }
             elif (true) { 
                 if (true) {
@@ -880,7 +914,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnFromWithinUsing15 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             if (true) { DoNothing(); }
             elif (true) { DoNothing(); }
             else {
@@ -898,20 +932,20 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     // valid uses of return within borrowing
 
     operation ReturnFromWithinBorrowing1 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             return ();
         }
     }
 
     operation ReturnFromWithinBorrowing2 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             if (true) { return (); }  
             else { DoNothing(); }
         }
     }
 
     operation ReturnFromWithinBorrowing3 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             if (true) { DoNothing(); }
             elif (true) { return (); }  
             else { DoNothing(); }
@@ -919,7 +953,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation ReturnFromWithinBorrowing4 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             if (true) { DoNothing(); }
             elif (true) { DoNothing(); }  
             else { return (); }
@@ -927,7 +961,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation ReturnFromWithinBorrowing5 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             if (true) { return (); }
             elif (true) { return (); }  
             else { return (); }
@@ -935,7 +969,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation ReturnFromWithinBorrowing6 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             repeat { return (); } 
             until(true) 
             fixup { DoNothing(); }
@@ -943,7 +977,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation ReturnFromWithinBorrowing7 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             repeat { 
                 DoNothing();
                 return (); 
@@ -956,8 +990,8 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation ReturnFromWithinBorrowing8 () : Unit {
-        borrowing (q = Qubit()) {
-            for (i in 1..10) {
+        borrow q = Qubit() {
+            for i in 1..10 {
                 DoNothing();
                 return ();
             }
@@ -967,28 +1001,28 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     // invalid uses of return within borrowing
 
     operation InvalidReturnFromWithinBorrowing1 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             return ();
             DoNothing(); 
         }
     }
 
     operation InvalidReturnFromWithinBorrowing2 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             return ();
             fail "unreachable";  
         }
     }
 
     operation InvalidReturnFromWithinBorrowing3 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             return ();
             if (true) { return (); }  
         }
     }
 
     operation InvalidReturnFromWithinBorrowing4 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             return ();
             repeat {} 
             until(true) 
@@ -997,7 +1031,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnFromWithinBorrowing5 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             repeat { DoNothing(); } 
             until(false) 
             fixup { return (); }
@@ -1005,7 +1039,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnFromWithinBorrowing6 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             repeat {
                 return ();
                 DoNothing(); 
@@ -1016,7 +1050,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnFromWithinBorrowing7 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             repeat { DoNothing(); } 
             until(true) 
             fixup { 
@@ -1027,35 +1061,35 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnFromWithinBorrowing8 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             within { return(); }
             apply {}
         }
     }
 
     operation InvalidReturnFromWithinBorrowing9 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             within {}
             apply { return(); }
         }
     }
 
     operation InvalidReturnFromWithinBorrowing10 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             return ();
-            for (i in 1..10) {}
+            for i in 1..10 {}
         }
     }
 
     operation InvalidReturnFromWithinBorrowing11 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             if (true) { return (); }
             DoNothing();
         }
     }
 
     operation InvalidReturnFromWithinBorrowing12 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             if (true) { DoNothing(); }
             elif (true) { return (); }  
             else { DoNothing(); }
@@ -1064,7 +1098,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnFromWithinBorrowing13 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             if (true) { DoNothing(); }
             elif (true) { DoNothing(); }  
             else { return (); }
@@ -1073,7 +1107,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnFromWithinBorrowing14 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             if (true) { return (); }
             elif (true) { return (); }  
             else { return (); }
@@ -1082,7 +1116,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnFromWithinBorrowing15 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             if (true) { return(); }
             elif (true) { 
                 return (); 
@@ -1093,7 +1127,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnFromWithinBorrowing16 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             if (true) { 
                 return(); 
                 DoNothing();
@@ -1105,7 +1139,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnFromWithinBorrowing17 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             if (true) { return(); }
             elif (true) { return (); }
             else { 
@@ -1119,93 +1153,93 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     // valid uses of return within multiple possibly nested qubit scopes
 
     operation ValidReturnPlacement1 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             return ();
         }
         DoNothing();
     }
 
     operation ValidReturnPlacement2 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             return ();
         }
         DoNothing();
     }
 
     operation ValidReturnPlacement3 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             if (true) { return (); }
         }
         DoNothing();
     }
 
     operation ValidReturnPlacement4 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             if (true) { return (); }
         }
         DoNothing();
     }
 
     operation ValidReturnPlacement5 () : Unit {
-        using (q = Qubit()) { 
+        use q = Qubit() { 
             if (true) { return (); }
         }
-        borrowing (q = Qubit()) { 
+        borrow q = Qubit() { 
             DoNothing();
             return (); 
         }
     }
 
     operation ValidReturnPlacement6 () : Unit {
-        using (q = Qubit()) { 
+        use q = Qubit() { 
             if (true) { return (); }
         }
-        using (q = Qubit()) {
+        use q = Qubit() {
             DoNothing();
             return (); 
         }
     }
 
     operation ValidReturnPlacement7 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             DoNothing();
-            using (c = Qubit()) {
+            use c = Qubit() {
                 return ();            
             }
         }
     }
 
     operation ValidReturnPlacement8 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             DoNothing();
-            borrowing (c = Qubit()) {
+            borrow c = Qubit() {
                 return ();            
             }
         }
     }
 
     operation ValidReturnPlacement9 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             DoNothing();
-            using (c = Qubit()) {
+            use c = Qubit() {
                 return ();            
             }
         }
     }
 
     operation ValidReturnPlacement10 () : Unit {
-        borrowing (q = Qubit()) {
+        borrow q = Qubit() {
             DoNothing();
-            borrowing (c = Qubit()) {
+            borrow c = Qubit() {
                 return ();            
             }
         }
     }
 
     operation ValidReturnPlacement11 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             if (true) {
-                using (c = Qubit()) { 
+                use c = Qubit() { 
                     return (); 
                 }
             }
@@ -1216,10 +1250,10 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation ValidReturnPlacement12 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             if (true) { }
             else {
-                using (c = Qubit()) { 
+                use c = Qubit() { 
                     return (); 
                 }
             }
@@ -1227,9 +1261,9 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation ValidReturnPlacement13 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             repeat {
-                using (c = Qubit()) { 
+                use c = Qubit() { 
                     return (); 
                 }
             }
@@ -1241,9 +1275,9 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation ValidReturnPlacement14 () : Unit {
-        using (q = Qubit()) {
-            for (i in 1 .. 10) {
-                using (c = Qubit()) { 
+        use q = Qubit() {
+            for i in 1 .. 10 {
+                use c = Qubit() { 
                     if (i == 1) { return (); }
                 }  
             }
@@ -1251,8 +1285,8 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation ValidReturnPlacement15 () : Unit {
-        for (i in 1 .. 10) {
-            using (c = Qubit()) { 
+        for i in 1 .. 10 {
+            use c = Qubit() { 
                 if (i == 1) { return (); }
             }  
             DoNothing();
@@ -1263,8 +1297,8 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     // invalid uses of return within multiple possibly nested qubit scopes
 
     operation InvalidReturnPlacement1 () : Unit {
-        using (q = Qubit()) {
-            using (c = Qubit()) {
+        use q = Qubit() {
+            use c = Qubit() {
                 return ();            
             }
             DoNothing();
@@ -1272,8 +1306,8 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement2 () : Unit {
-        using (q = Qubit()) {
-            borrowing (c = Qubit()) {
+        use q = Qubit() {
+            borrow c = Qubit() {
                 return ();            
             }
             DoNothing();
@@ -1281,8 +1315,8 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement3 () : Unit {
-        borrowing (q = Qubit()) {
-            using (c = Qubit()) {
+        borrow q = Qubit() {
+            use c = Qubit() {
                 return ();            
             }
             DoNothing();
@@ -1290,8 +1324,8 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement4 () : Unit {
-        borrowing (q = Qubit()) {
-            borrowing (c = Qubit()) {
+        borrow q = Qubit() {
+            borrow c = Qubit() {
                 return ();            
             }
             DoNothing();
@@ -1299,9 +1333,9 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement5 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             if (true) {
-                using (c = Qubit()) { 
+                use c = Qubit() { 
                     return (); 
                 }
             }
@@ -1310,10 +1344,10 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement6 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             if (true) {}
             else {
-                using (c = Qubit()) { 
+                use c = Qubit() { 
                     return (); 
                 }
             }
@@ -1322,10 +1356,10 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement7 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             if (true) { }
             else {
-                using (c = Qubit()) { 
+                use c = Qubit() { 
                     return (); 
                 }
                 DoNothing();
@@ -1334,11 +1368,11 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement8 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             repeat {}
             until (true)
             fixup {
-                using (c = Qubit()) { 
+                use c = Qubit() { 
                     return (); 
                 }
             }
@@ -1347,11 +1381,11 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement9 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             repeat {}
             until (true)
             fixup {
-                using (c = Qubit()) { 
+                use c = Qubit() { 
                     return (); 
                 }
                 DoNothing();
@@ -1360,9 +1394,9 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement10 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             repeat {
-                using (c = Qubit()) { 
+                use c = Qubit() { 
                     return (); 
                 }            
             }
@@ -1373,9 +1407,9 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement11 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             repeat {
-                using (c = Qubit()) { 
+                use c = Qubit() { 
                     return (); 
                 }            
                 DoNothing();
@@ -1386,9 +1420,9 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement12 () : Unit {
-        using (q = Qubit()) {
-            for (i in 1 .. 10) {
-                using (c = Qubit()) { 
+        use q = Qubit() {
+            for i in 1 .. 10 {
+                use c = Qubit() { 
                     if (i == 1) { return (); }
                 }  
             }
@@ -1397,9 +1431,9 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement13 () : Unit {
-        using (q = Qubit()) {
-            for (i in 1 .. 10) {
-                using (c = Qubit()) { 
+        use q = Qubit() {
+            for i in 1 .. 10 {
+                use c = Qubit() { 
                     if (i == 1) { return (); }
                 }  
                 DoNothing();
@@ -1408,9 +1442,9 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement14 () : Unit {
-        using (q = Qubit()) {
-            for (i in 1 .. 10) {
-                using (c = Qubit()) { 
+        use q = Qubit() {
+            for i in 1 .. 10 {
+                use c = Qubit() { 
                     if (i == 1) { return (); }
                     DoNothing();
                 }  
@@ -1419,11 +1453,11 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement15 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             repeat {}
             until (true)
             fixup {
-                using (c = Qubit()) { 
+                use c = Qubit() { 
                     return (); 
                 }
             }
@@ -1431,10 +1465,10 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement16 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             within {}
             apply { 
-                using (c = Qubit()) { 
+                use c = Qubit() { 
                     return (); 
                 }
             }
@@ -1442,9 +1476,9 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement17 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             within { 
-                using (c = Qubit()) { 
+                use c = Qubit() { 
                     return (); 
                 }            
             }
@@ -1453,7 +1487,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement18 (arg : Bool) : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             within {}
             apply { 
                 if (arg) { return (); }
@@ -1462,7 +1496,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement19 (arg : Bool) : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             within { 
                 if (arg) { return (); }
             }
@@ -1471,7 +1505,7 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
     }
 
     operation InvalidReturnPlacement20 () : Unit {
-        using (q = Qubit()) {
+        use q = Qubit() {
             within { 
                 within { 
                     return(); 
@@ -1482,4 +1516,142 @@ namespace Microsoft.Quantum.Testing.GlobalVerification {
             apply { DoNothing(); } 
         }
     }
+
+
+    // valid declaration attributes
+
+    @Attribute()
+    newtype CustomAttribute = Double;
+    @Attribute()
+    newtype AttAsUserDefType = CustomAttribute;
+    @Attribute()
+    newtype AttArrayAsUserDefType = CustomAttribute[];
+
+    @Attribute()
+    @AttType1()
+    newtype AttType1 = Unit;
+    @Attribute()
+    @AttType2()
+    newtype AttType2 = Unit;
+
+
+    @IntAttribute(0b111)
+    @StringAttribute("")
+    @BigIntArrayAttribute([0xF0a00101L])
+    @PauliResultAttribute (PauliX, Zero)
+    operation ValidAttributes1 () : Unit {}
+
+    @IntAttribute(0b111)
+    @StringAttribute("")
+    @BigIntArrayAttribute([0xF0a00101L])
+    @PauliResultAttribute (PauliX, Zero)
+    function ValidAttributes2 () : Unit {}
+
+    @IntAttribute(0b111)
+    @StringAttribute("")
+    @BigIntArrayAttribute([0xF0a00101L])
+    @PauliResultAttribute (PauliX, Zero)
+    newtype ValidAttributes3 = Unit;
+
+    @BigIntArrayAttribute(new BigInt[3])
+    function ValidAttributes4 () : Unit {}
+
+    @StringAttribute($"some text")
+    function ValidAttributes5 () : Unit {}
+
+    @CustomAttribute(1.)
+    function ValidAttributes6 () : Unit {}
+
+    @Microsoft.Quantum.Testing.Attributes.CustomAttribute()
+    function ValidAttributes7 () : Unit {}
+
+    @Microsoft.Quantum.Core.IntTupleAttribute(1,1)
+    function ValidAttributes8 () : Unit {}
+
+    @Microsoft.Quantum.Testing.Attributes.IntTupleAttribute(1,1)
+    function ValidAttributes9 () : Unit {}
+
+    @AttType1()
+    @AttType2()
+    function ValidAttributes10 () : Unit {}
+
+    @BigIntArrayAttribute([0L, size = 3])
+    function ValidAttributes11 () : Unit {}
+
+    @BigIntArrayAttribute([0L, size = 0])
+    function ValidAttributes12 () : Unit {}
+
+    @BigIntArrayAttribute([])
+    function ValidAttributes13 () : Unit {}
+
+    @AttType2()
+    @AttType1()
+    @AttType1()
+    function AttributeDuplication1 () : Unit {}
+
+    @StringAttribute("")
+    @StringAttribute("")
+    @AttType1()
+    @AttType2()
+    operation AttributeDuplication2 () : Unit {}
+
+    @AttType1()
+    @AttType1()
+    newtype AttributeDuplication3 = Unit;
+
+
+    // invalid declaration attributes
+
+    @StringAttribute($"{1}")
+    function InvalidAttributes1 () : Unit {}
+
+    @IntTupleAttribute(1,1)
+    function InvalidAttributes2 () : Unit {}
+
+    @NonExistent()
+    function InvalidAttributes3 () : Unit {}
+
+    @Undefined.NonExistent()
+    function InvalidAttributes4 () : Unit {}
+
+    @Microsoft.Quantum.Core.NonExistent()
+    function InvalidAttributes5 () : Unit {}
+
+    @Microsoft.Quantum.Testing.Attributes.CustomAttribute(1.)
+    function InvalidAttributes6 () : Unit {}
+
+    @AttAsUserDefType(CustomAttribute(1.))
+    function InvalidAttributes7 () : Unit {}
+
+    @AttArrayAsUserDefType(new CustomAttribute[0])
+    function InvalidAttributes8 () : Unit {}
+
+    operation InvalidAttributes9 () : Unit {    
+        @IntAttribute(1)
+        body(...) {}
+    }
+
+    operation InvalidAttributes10 () : Unit {    
+        body(...) {}
+        @IntAttribute(1)
+        adjoint(...) {}
+    }
+
+    operation InvalidAttributes11 () : Unit {    
+        body(...) {}
+        @IntAttribute(1)
+        controlled (cs, ...) {}
+    }
+
+    operation InvalidAttributes12 () : Unit {    
+        @IntAttribute(1)
+        controlled adjoint (cs, ...) {}
+        body(...) {}
+    }
+
+    @Attribute() 
+    operation InvalidAttributes13 () : Unit {}
+
+    @Attribute() 
+    function InvalidAttributes14 () : Unit {}
 }
