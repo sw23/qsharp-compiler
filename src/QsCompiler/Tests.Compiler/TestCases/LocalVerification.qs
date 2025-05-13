@@ -1350,7 +1350,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     @Test("QuantumSimulator")
     function ValidTestAttribute1 () : Unit {}
 
-    @Test("ResourcesEstimator")
+    @Test("SparseSimulator")
     function ValidTestAttribute2 () : Unit {}
 
     @Test("ToffoliSimulator")
@@ -1359,7 +1359,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     @Test("QuantumSimulator")
     operation ValidTestAttribute4 () : Unit {}
 
-    @Test("ResourcesEstimator")
+    @Test("SparseSimulator")
     operation ValidTestAttribute5 () : Unit {}
 
     @Test("ToffoliSimulator")
@@ -1369,7 +1369,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     operation ValidTestAttribute7 () : Unit
     is Adj + Ctl{}
 
-    @Test("ResourcesEstimator")
+    @Test("SparseSimulator")
     operation ValidTestAttribute8 () : Unit
     is Adj {}
 
@@ -1380,21 +1380,16 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     @Test("QuantumSimulator")
     function ValidTestAttribute10 () : ((Unit)) {}
 
-    @Test("ResourcesEstimator")
-    function ValidTestAttribute11 (arg : Unit) : Unit { }
-
     @Test("ToffoliSimulator")
     operation ValidTestAttribute12 (arg : (Unit)) : Unit { }
 
     @Test("QuantumSimulator")
     @Test("ToffoliSimulator")
-    @Test("ResourcesEstimator")
     @Test("SparseSimulator")
     function ValidTestAttribute13 () : Unit { }
 
     @Test("QuantumSimulator")
     @Test("ToffoliSimulator")
-    @Test("ResourcesEstimator")
     @Test("SparseSimulator")
     operation ValidTestAttribute14 () : Unit { }
 
@@ -1443,17 +1438,17 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     }
 
     operation InvalidTestAttribute3 () : Unit {
-        @Test("ResourcesEstimator")
+        @Test("QuantumSimulator")
         body (...) {}
     }
 
     operation InvalidTestAttribute4 () : Unit {
         body (...) { }
-        @Test("ResourcesEstimator")
+        @Test("SparseSimulator")
         adjoint (...) { }
     }
 
-    @Test("ResourcesEstimator")
+    @Test("ToffoliSimulator")
     function InvalidTestAttribute5<'T> () : Unit { }
 
     @Test("QuantumSimulator")
@@ -1472,7 +1467,7 @@ namespace Microsoft.Quantum.Testing.LocalVerification {
     @Test("QuantumSimulator")
     function InvalidTestAttribute9 (a : Unit, b : Unit) : Unit { }
 
-    @Test("ResourcesEstimator")
+    @Test("ToffoliSimulator")
     operation InvalidTestAttribute10 (a : Bool) : Unit { }
 
     @Test("SparseSimulator")
